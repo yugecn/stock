@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>汪汪队资金看板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap"
+    />
+    <link rel="stylesheet" href="hark.css" />
+    <link rel="stylesheet" href="hark-hero.css" />
+    <link rel="stylesheet" href="hark-charts.css" />
+    <style>
+      .x-up { color: color-mix(in srgb, var(--fill-system-red) 80%, var(--text-primary)); }
+      .x-down { color: color-mix(in srgb, var(--fill-system-green) 72%, var(--text-primary)); }
+      .x-n { white-space: nowrap; }
+      .x-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      .x-tog {
+        display: inline-flex; align-items: center; min-height: 30px; padding: 5px 12px;
+        border-radius: var(--r-pill); border: 1px solid var(--stroke-primary);
+        background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-tag); cursor: pointer;
+      }
+      .x-tog:hover { box-shadow: inset 0 0 0 100px var(--hover-wash); }
+      .x-tog[aria-pressed="true"] { background: var(--fill-primary); color: var(--text-primary-on); border-color: var(--fill-primary); }
+      .x-btn { cursor: pointer; }
+      .x-btn[disabled] { opacity: 0.6; cursor: default; }
+      .x-sort { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
+      .x-sort:hover { color: var(--text-primary); }
+      .x-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font: var(--type-caption); color: var(--text-secondary); }
+      .x-msort { display: none; align-items: center; gap: 8px; font: var(--type-caption); color: var(--text-secondary); }
+      .x-msort select {
+        min-height: var(--tap); padding: 0 12px; border-radius: var(--r-s); border: 1px solid var(--stroke-primary);
+        background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-small);
+      }
+      .x-csv { border: 1px solid var(--stroke-secondary); border-radius: var(--r-m); padding: 14px 16px; }
+      .x-csv summary { font: var(--type-label); cursor: pointer; min-height: 24px; }
+      .x-csv[open] summary { margin-bottom: 12px; }
+      .x-csv textarea {
+        display: block; width: 100%; height: 260px; margin-top: 12px; padding: 12px; resize: vertical;
+        border: 1px solid var(--stroke-primary); border-radius: var(--r-s); background: var(--fill-tertiary);
+        color: var(--text-primary); font: 12px/1.5 "Geist Mono", ui-monospace, monospace;
+      }
+      .x-sum { font: var(--type-label); color: var(--text-primary); margin-top: 12px; }
+      .x-scroll { margin-inline: -12px; padding-inline: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .x-scroll table { min-width: 820px; }
+      .x-scroll th, .x-scroll td { vertical-align: middle; }
+      @media (pointer: coarse), (max-width: 599px) { .x-scroll .x-sort { min-height: var(--tap); min-width: var(--tap); text-align: left; } }
+      .x-scroll tr > :first-child { position: sticky; left: 0; z-index: 2; background: var(--fill-primary-on); padding-right: 12px; box-shadow: 1px 0 0 var(--stroke-secondary); }
+      .x-scroll tbody th { font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .x-scroll td.x-name { min-width: 150px; }
+      .x-amt { position: relative; min-width: 128px; padding: 4px 8px; font-weight: var(--weight-bold); white-space: nowrap; }
+      .x-amt i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: color-mix(in srgb, var(--text-primary) 13%, transparent); }
+      .x-amt span { position: relative; }
+      .x-scroll td.x-pct { white-space: nowrap; font-weight: var(--weight-medium); color: var(--text-primary); text-align: right; }
+      .x-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); font: var(--type-caption); border: 1px solid var(--stroke-primary); color: var(--text-primary); white-space: nowrap; }
+      .x-badge--strong { background: var(--fill-primary); border-color: var(--fill-primary); color: var(--text-primary-on); font-weight: var(--weight-bold); }
+      .x-dim { color: var(--text-secondary); }
+      .x-div { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+      .x-div__track { position: relative; flex: 0 0 120px; height: 12px; }
+      .x-div__track::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--stroke-primary); }
+      .x-div__track i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+      .x-div__track i.pos { left: 50%; background: var(--fill-system-red); }
+      .x-div__track i.neg { right: 50%; background: var(--fill-system-green); }
+      .x-div b { min-width: 48px; text-align: right; font-weight: var(--weight-bold); }
+      @media (pointer: coarse), (max-width: 599px) { .x-tog { min-height: var(--tap); padding-inline: 14px; } }
+      @media (max-width: 599px) { .x-msort { display: flex; } }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="top">
+      <header class="nav glass" data-auto></header>
+      <main class="main">
+        <section class="hero">
+          <div class="hero__copy">
+            <p class="hero__eyebrow" id="hb-eyebrow">汪汪队资金看板</p>
+            <h1 id="hb-title">汪汪队资金看板</h1>
+            <p class="hero__sub" id="hb-sub"></p>
+            <p class="hero__meta" id="hb-meta"></p>
+          </div>
+        </section>
+
+        <section class="section" id="latest" data-nav="最新">
+          <div class="head">
+            <p class="head__eyebrow" id="lt-eyebrow">最新完整交易日</p>
+            <h2>20只宽基ETF，最新一天的账本。</h2>
+            <p class="head__sub">净流入按交易所公布份额自算，单位亿元。</p>
+          </div>
+          <section class="stats">
+            <div class="stat"><span class="stat__fig" id="st-nf1"></span><span class="stat__label">当日净流入<br />份额变动 × 收盘价</span></div>
+            <div class="stat"><span class="stat__fig" id="st-amt1"></span><span class="stat__label">成交额估算<br />量 × 均价，非官方</span></div>
+            <div class="stat"><span class="stat__fig" id="st-nf5"></span><span class="stat__label">近5日<br />滚动合计</span></div>
+            <div class="stat"><span class="stat__fig" id="st-nf20"></span><span class="stat__label">近20日<br />约一个月</span></div>
+          </section>
+          <section class="stats">
+            <div class="stat"><span class="stat__fig" id="st-ytd"></span><span class="stat__label">2026年内累计<br />自 2026-01-01</span></div>
+            <div class="stat"><span class="stat__fig" id="st-cum"></span><span class="stat__label">自2023-10累计<br />自 2023-10-09</span></div>
+            <div class="stat"><span class="stat__fig" id="st-aum"></span><span class="stat__label">篮子总规模<br />20只合计，亿元</span></div>
+          </section>
+          <p class="x-legend"><span>单位：亿元</span><span><b class="x-up">红色 +</b> 净流入</span><span><b class="x-down">绿色 −</b> 净流出</span><span>（A股惯例：红涨绿跌）</span></p>
+        </section>
+
+        <section class="section" id="live" data-nav="盘中">
+          <div class="head">
+            <p class="head__eyebrow">盘中 · 腾讯行情</p>
+            <h2>今天放量了吗？盘中成交额先看一眼。</h2>
+            <p class="head__sub">成交额不是净流入：真实净申购要等交易所次日早上公布份额。</p>
+          </div>
+          <section class="stats">
+            <div class="stat"><span class="stat__fig" id="lv-amt">—</span><span class="stat__label">盘中累计成交额<br />20只合计</span></div>
+            <div class="stat"><span class="stat__fig" id="lv-est">—</span><span class="stat__label">预估全日成交额<br /><span id="lv-est-l">按日内成交曲线推算</span></span></div>
+            <div class="stat"><span class="stat__fig" id="lv-ratio">—</span><span class="stat__label">对比20日均<br /><span id="lv-ratio-l"></span></span></div>
+            <div class="stat"><span class="stat__fig" id="lv-time">—</span><span class="stat__label">最后更新<br />北京时间</span></div>
+          </section>
+          <div class="x-bar">
+            <button class="btn x-btn" type="button" id="lv-refresh">立即刷新</button>
+            <span class="chip" id="lv-status">加载中…</span>
+          </div>
+          <div class="table-wrap">
+            <table id="lv-table">
+              <caption>交易时段（北京时间 9:30–11:30、13:00–15:00，周一至周五）每60秒自动刷新</caption>
+              <thead>
+                <tr>
+                  <th scope="col">名称</th>
+                  <th scope="col"><button class="x-sort" data-k="price">价格</button></th>
+                  <th scope="col"><button class="x-sort" data-k="pct">涨跌幅</button></th>
+                  <th scope="col"><button class="x-sort" data-k="amt">成交额（亿元）</button></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="fineprint">预估全日 = 当前成交额 ÷ 篮子平均日内成交曲线在当前时点的占比（15:00 后为 1）。20日均成交额取最近20个完整交易日的估算值。</p>
+        </section>
+
+        <section class="section" id="single" data-nav="单只">
+          <div class="head">
+            <p class="head__eyebrow">单只ETF当日表现</p>
+            <h2>20只里，谁在放量，谁在被申购？</h2>
+            <p class="head__sub">成交额、涨跌幅和放量倍数随盘中行情刷新；申赎净流入为交易所最近一次公布的份额。</p>
+          </div>
+          <div class="x-bar">
+            <span class="chip" id="se-status">快照：2026-11-06 16:15 收盘</span>
+          </div>
+          <p class="x-sum" id="se-sum">—</p>
+          <div class="x-scroll">
+            <table id="se-table">
+              <caption>点击表头排序，再点一次切换升降序。涨跌幅底色：红涨绿跌，越深幅度越大。</caption>
+              <thead>
+                <tr>
+                  <th scope="col"><button class="x-sort" data-k="code">代码</button></th>
+                  <th scope="col"><button class="x-sort" data-k="name">名称</button></th>
+                  <th scope="col"><button class="x-sort" data-k="amt">当日成交额(亿)</button></th>
+                  <th scope="col"><button class="x-sort" data-k="share">占比</button></th>
+                  <th scope="col"><button class="x-sort" data-k="pct">涨跌幅</button></th>
+                  <th scope="col"><button class="x-sort" data-k="ratio">放量倍数</button></th>
+                  <th scope="col"><button class="x-sort" data-k="flow" id="se-flow-h">申赎净流入(亿) · 11-05份额</button></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="fineprint">成交额/涨跌幅为腾讯行情；近20日均额为日K估算(量×OHLC均价)；申赎净流入用交易所份额，T日份额于T+1早上公布，当前为 2026-11-05。</p>
+        </section>
+
+        <section class="section" id="flow" data-nav="流入">
+          <div class="head">
+            <p class="head__eyebrow">每日净流入 · 成交额</p>
+            <h2>超过100亿，才算汪汪队上班。</h2>
+            <p class="head__sub" id="fl-sub"></p>
+          </div>
+          <div class="x-bar" role="group" aria-label="时间范围">
+            <button class="x-tog" type="button" data-n="60" aria-pressed="true">60日</button>
+            <button class="x-tog" type="button" data-n="120" aria-pressed="false">120日</button>
+            <button class="x-tog" type="button" data-n="250" aria-pressed="false">250日</button>
+          </div>
+          <figure class="chart">
+            <figcaption class="chart__cap" id="fl-cap">每日净流入与成交额估算<small></small></figcaption>
+            <div class="chart__canvas chart__canvas--tall"><canvas id="flow-chart" role="img" aria-label="每日净流入柱图，红为流入绿为流出，成交额估算为折线，虚线为100亿上班线"></canvas></div>
+          </figure>
+        </section>
+
+        <section class="section" id="cum" data-nav="累计">
+          <div class="head">
+            <p class="head__eyebrow">累计净流入 · 自 2023-10-09</p>
+            <h2>三年进进出出，账面几乎打平。</h2>
+            <p class="head__sub" id="cm-sub"></p>
+          </div>
+          <figure class="chart">
+            <figcaption class="chart__cap">累计净流入曲线<small id="cm-cap"></small></figcaption>
+            <div class="chart__canvas chart__canvas--tall"><canvas id="cum-chart" role="img" aria-label="累计净流入曲线，标注2024年10月、2025年4月的大额流入，2026年1月的流出潮和2026年11月的回流"></canvas></div>
+          </figure>
+          <ol class="timeline" id="cm-events"></ol>
+        </section>
+
+        <section class="section" id="cats" data-nav="类别">
+          <div class="head">
+            <p class="head__eyebrow">按指数类别分解</p>
+            <h2>钱进了哪类指数。</h2>
+            <p class="head__sub">8个类别，由每日分类净流入汇总。</p>
+          </div>
+          <div class="table-wrap">
+            <table id="cat-table">
+              <thead>
+                <tr>
+                  <th scope="col">类别</th><th scope="col">当日</th><th scope="col">近5日</th><th scope="col">近20日</th>
+                  <th scope="col">近60日</th><th scope="col">2026年内</th><th scope="col">自2023-10累计</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <figure class="chart">
+            <figcaption class="chart__cap">近20个交易日，按类别堆叠<small>每日净流入，亿元；正为流入，负为流出</small></figcaption>
+            <div class="chart__canvas chart__canvas--tall"><canvas id="cat-chart" role="img" aria-label="近20个交易日各指数类别净流入的堆叠柱图"></canvas></div>
+          </figure>
+        </section>
+
+        <section class="section" id="rank" data-nav="排行">
+          <div class="head">
+            <p class="head__eyebrow">历史大额日</p>
+            <h2>汪汪队最忙的几天。</h2>
+            <p class="head__sub">距今按交易日计。</p>
+          </div>
+          <div class="table-wrap">
+            <table id="in-table">
+              <caption>大额流入日 · 前12</caption>
+              <thead><tr><th scope="col">排名</th><th scope="col">日期</th><th scope="col">净流入</th><th scope="col">成交额估算</th><th scope="col">距今</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <table id="out-table">
+              <caption>大额流出日 · 前8</caption>
+              <thead><tr><th scope="col">排名</th><th scope="col">日期</th><th scope="col">净流出</th><th scope="col">成交额估算</th><th scope="col">距今</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section" id="funds" data-nav="明细">
+          <div class="head">
+            <p class="head__eyebrow">20只明细</p>
+            <h2>每一只ETF的份额、规模和资金。</h2>
+            <p class="head__sub">点表头排序，点类别筛选；合计行随筛选变化。</p>
+          </div>
+          <div class="x-bar" id="fd-filter" role="group" aria-label="按类别筛选"></div>
+          <label class="x-msort">排序<select id="fd-msort"></select></label>
+          <div class="table-wrap">
+            <table id="fd-table">
+              <thead><tr></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section" id="export" data-nav="导出">
+          <div class="head">
+            <p class="head__eyebrow">CSV 导出</p>
+            <h2>把数据带走。</h2>
+            <p class="head__sub">UTF-8 带 BOM，Excel 直接打开不乱码。</p>
+          </div>
+          <div class="links">
+            <button class="btn x-btn" type="button" data-dl="daily">导出每日净流入CSV</button>
+            <button class="btn x-btn" type="button" data-dl="funds">导出20只明细CSV</button>
+            <button class="btn x-btn" type="button" data-cp="daily">复制每日CSV</button>
+            <button class="btn x-btn" type="button" data-cp="funds">复制明细CSV</button>
+          </div>
+          <p class="fineprint" id="ex-msg">页面若在沙盒中运行，下载可能被拦截，可改用复制或下方文本框。</p>
+          <details class="x-csv">
+            <summary>查看 CSV 文本，手动复制</summary>
+            <div class="x-bar" role="group" aria-label="选择CSV">
+              <button class="x-tog" type="button" data-tx="daily" aria-pressed="true">每日净流入</button>
+              <button class="x-tog" type="button" data-tx="funds" aria-pressed="false">20只明细</button>
+            </div>
+            <textarea id="ex-text" readonly aria-label="CSV 文本"></textarea>
+          </details>
+        </section>
+
+        <section class="section" id="notes" data-nav="口径">
+          <div class="head">
+            <p class="head__eyebrow">口径与风险说明</p>
+            <h2>数字怎么来的，哪里不能信。</h2>
+          </div>
+          <div class="cards">
+            <div>
+              <h3>数据源</h3>
+              <p class="fineprint">上交所 ETF 每日份额（query.sse.com.cn）、深交所基金规模（fund.szse.cn），腾讯行情日K与盘中报价（qt.gtimg.cn / web.ifzq.gtimg.cn）。全部为公开数据自算。</p>
+            </div>
+            <div>
+              <h3>净流入</h3>
+              <p class="fineprint">Σ(当日份额 − 前一交易日份额) × 当日收盘价。与某机构看板交叉校验：<span id="nt-xcheck"></span>，口径一致。</p>
+            </div>
+            <div>
+              <h3>成交额</h3>
+              <p class="fineprint">估算值：日成交量 × (开+高+低+收)/4，非交易所官方成交额。</p>
+            </div>
+            <div>
+              <h3>份额拆分/合并</h3>
+              <p class="fineprint">会产生假流入/流出。已自动检测（份额比接近整数倍，且价格同日或次日反向同比例变动），并按折算价格修正，见下表。</p>
+            </div>
+            <div>
+              <h3>篮子不等于国家队</h3>
+              <p class="fineprint">篮子为20只代表性宽基ETF，净申购不等于国家队本身行为，也可能来自其他机构。2026-05-01起基金定期报告不再披露前十大持有人，无法公开验证汇金当前持仓。</p>
+            </div>
+            <div>
+              <h3>公布时间</h3>
+              <p class="fineprint">份额数据 T 日收盘后至 T+1 早上公布，故看板最新完整日为 <span id="nt-asof"></span>。</p>
+              <p class="fineprint">仅供研究自用，不构成投资建议。</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="sp-table">
+              <caption>已检测并修正的份额拆分/合并</caption>
+              <thead><tr><th scope="col">基金</th><th scope="col">日期</th><th scope="col">份额比</th><th scope="col">判定</th><th scope="col">原始流入</th><th scope="col">修正后</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+      <footer class="foot">
+        <p id="ft-text">汪汪队资金看板</p>
+        <nav aria-label="回到各部分" data-auto></nav>
+        <a class="badge" href="https://hark.com/" target="_blank" rel="noopener"><span class="hark-mark"></span><span>built by hark</span></a>
+      </footer>
+    </div>
+    <script type="application/json" id="dash" src="dashboard.json"></script>
+    <script src="hark.js"></script>
+    <script src="chart.js"></script>
+    <script src="datalabels.js"></script>
+    <script src="hark-charts.js"></script>
+    <script>
+const D = Hark.data("dash");
+(function () {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const NF = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const ok = (v) => v != null && !isNaN(v);
+  const fmt = (v) => (ok(v) ? NF.format(v) : "—");
+  const sgn = (v) => (ok(v) ? (v > 0 ? "+" : "") + NF.format(v) : "—");
+  const cls = (v) => (v > 0 ? "x-up" : v < 0 ? "x-down" : "");
+  const money = (v) => `<span class="${cls(v)}">${sgn(v)}</span>`;
+  const sum = (arr, f) => arr.reduce((a, x) => a + (f(x) || 0), 0);
+  const S = D.stats, days = D.daily, snap = D.snapshot;
+  const dayIdx = Object.fromEntries(days.map((d, i) => [d.d, i]));
+  const byDay = (d) => days[dayIdx[d]];
+  const cell = (label, html, c) => `<td data-label="${label}"${c ? ` class="${c}"` : ""}>${html}</td>`;
+
+  /* 1. Banner */
+  let title, sub;
+  if (S.nf1 >= 100) { title = "汪汪队上班了 🐶"; sub = `近5日累计 ${sgn(S.nf5)}亿，今天又搬了 ${fmt(S.nf1)}亿的砖`; }
+  else if (S.nf1 >= 0) { title = "汪汪队轮休/摸鱼中"; sub = `近5日累计 ${sgn(S.nf5)}亿，今天只交了${fmt(S.nf1)}亿作业`; }
+  else { title = "汪汪队在收工撤退"; sub = `近5日累计 ${sgn(S.nf5)}亿，今天悄悄撤走 ${fmt(-S.nf1)}亿`; }
+  $("#hb-eyebrow").textContent = `数据截至 ${D.as_of} · 20只宽基ETF`;
+  $("#hb-title").textContent = title;
+  $("#hb-sub").textContent = sub;
+  $("#hb-meta").textContent = `当日净流入 ${sgn(S.nf1)}亿 · 连续上班 ${S.streak} 天 · 近60日上班 ${S.work_days_60} 天 · 自${D.first.slice(0, 7)}起上班 ${S.work_days_total} 天（单日≥100亿）`;
+  document.title = `${title} · 汪汪队资金看板`;
+
+  /* 2. Stats */
+  $("#lt-eyebrow").textContent = `最新完整交易日 · ${D.as_of}`;
+  const setFig = (id, v, signed) => { const el = $(id); el.textContent = (signed ? sgn(v) : fmt(v)) + "亿"; if (signed) el.className = "stat__fig " + cls(v); };
+  setFig("#st-nf1", S.nf1, true); setFig("#st-amt1", S.amt1); setFig("#st-nf5", S.nf5, true); setFig("#st-nf20", S.nf20, true);
+  setFig("#st-ytd", S.ytd, true); setFig("#st-cum", S.cum, true); setFig("#st-aum", S.aum);
+
+  /* 3. Live */
+  const avg20 = sum(days.slice(-20), (d) => d.amt) / 20;
+  const nameOf = Object.fromEntries(D.funds.map((f) => [f.code, f.name]));
+  const qcodes = D.funds.map((f) => (f.code[0] === "5" ? "sh" : "sz") + f.code);
+  const pad = (n) => String(n).padStart(2, "0");
+  function bj() { const t = new Date(Date.now() + 8 * 3600e3); return { dow: t.getUTCDay(), hm: pad(t.getUTCHours()) + ":" + pad(t.getUTCMinutes()) }; }
+  function trading() { const b = bj(); if (b.dow === 0 || b.dow === 6) return false; return (b.hm >= "09:30" && b.hm <= "11:30") || (b.hm >= "13:00" && b.hm <= "15:00"); }
+  function factorAt(hm) { if (hm >= "15:00") return 1; let f = snap.shape[0][1]; for (const [t, v] of snap.shape) { if (t <= hm) f = v; else break; } return f; }
+  let liveRows = [], liveSort = { k: "amt", dir: -1 };
+  function renderLiveTable() {
+    const k = liveSort.k, dir = liveSort.dir;
+    const rows = liveRows.slice().sort((a, b) => (a[k] - b[k]) * dir);
+    $("#lv-table tbody").innerHTML = rows.map((r) => `<tr><th scope="row">${r.name}<small>${r.code}</small></th>${cell("价格", ok(r.price) ? r.price.toFixed(3) : "—", "x-n")}${cell("涨跌幅", `<span class="${cls(r.pct)}">${sgn(r.pct)}%</span>`, "x-n")}${cell("成交额（亿元）", fmt(r.amt), "num")}</tr>`).join("");
+    $$("#lv-table thead th").forEach((th) => { const b = $(".x-sort", th); th.removeAttribute("aria-sort"); if (b) b.textContent = b.textContent.replace(/[ ↑↓]+$/, ""); if (b && b.dataset.k === k) { th.setAttribute("aria-sort", dir < 0 ? "descending" : "ascending"); b.textContent += dir < 0 ? " ↓" : " ↑"; } });
+  }
+  function renderLive(rows, total, hm, stamp) {
+    liveRows = rows;
+    const fac = factorAt(hm), est = total / fac;
+    $("#lv-amt").textContent = fmt(total) + "亿";
+    $("#lv-est").textContent = fmt(est) + "亿";
+    $("#lv-est-l").textContent = fac < 1 ? `${hm} 约占全日 ${(fac * 100).toFixed(1)}%` : "已收盘，即全日";
+    $("#lv-ratio").textContent = (est / avg20).toFixed(2) + "倍";
+    $("#lv-ratio-l").textContent = `20日均 ${fmt(avg20)}亿`;
+    $("#lv-time").textContent = stamp;
+    renderLiveTable();
+  }
+  function setStatus(text, solid) { const c = $("#lv-status"); c.textContent = text; c.classList.toggle("chip--solid", !!solid); }
+  const snapStamp = snap.generated_at.slice(5, 19);
+  function useSnapshot() {
+    const rows = snap.items.map((it) => ({ code: it.code, name: nameOf[it.code] || it.code, price: it.price, pct: it.pct, amt: it.amount_yi }));
+    renderLive(rows, snap.amount_yi, snap.generated_at.slice(11, 16), snapStamp);
+    setStatus(`接口不可用，显示 ${snap.generated_at.slice(5, 16)} 快照`, false);
+  }
+  async function loadLive() {
+    const btn = $("#lv-refresh");
+    btn.disabled = true; setStatus("刷新中…", false);
+    try {
+      const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch("https://qt.gtimg.cn/q=" + qcodes.join(","), { signal: ctrl.signal, cache: "no-store" });
+      clearTimeout(tm);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const buf = await r.arrayBuffer();
+      let txt;
+      try { txt = new TextDecoder("gbk").decode(buf); } catch (e) { txt = new TextDecoder("utf-8").decode(buf); }
+      const rows = []; let ts = "";
+      txt.replace(/v_(\w+)="([^"]*)"/g, (m, key, v) => {
+        const f = v.split("~");
+        if (f.length < 38) return m;
+        const code = key.slice(2);
+        rows.push({ code, name: nameOf[code] || f[1], price: parseFloat(f[3]), pct: parseFloat(f[32]), amt: (parseFloat(f[37]) || 0) / 1e4 });
+        if (f[30] && f[30] > ts) ts = f[30];
+        return m;
+      });
+      if (!rows.length || ts.length < 14) throw new Error("empty");
+      const hm = ts.slice(8, 10) + ":" + ts.slice(10, 12);
+      renderLive(rows, sum(rows, (x) => x.amt), hm, `${ts.slice(4, 6)}-${ts.slice(6, 8)} ${hm}:${ts.slice(12, 14)}`);
+      setStatus(trading() ? "实时 · 每60秒刷新" : "休市中 · 显示最近一次报价", trading());
+      document.dispatchEvent(new CustomEvent("x-quote", { detail: { rows, ts, live: trading() } }));
+    } catch (e) {
+      useSnapshot();
+      document.dispatchEvent(new CustomEvent("x-quote", { detail: null }));
+    } finally { btn.disabled = false; }
+  }
+  $("#lv-refresh").addEventListener("click", loadLive);
+  $$("#lv-table .x-sort").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.k; liveSort = { k, dir: liveSort.k === k ? -liveSort.dir : -1 }; renderLiveTable(); }));
+  loadLive();
+  setInterval(() => { if (trading()) loadLive(); }, 60000);
+
+  /* 4. Flow chart */
+  const RED = "var(--fill-system-red)", GREEN = "var(--fill-system-green)";
+  function flowSlice(n) { const s = days.slice(-n); return { labels: s.map((d) => d.d.slice(2)), nf: s.map((d) => d.nf), amt: s.map((d) => d.amt), s }; }
+  function flowText(n, f) {
+    const work = f.s.filter((d) => d.nf >= 100).length, tot = sum(f.s, (d) => d.nf);
+    $("#fl-cap").innerHTML = `近${n}个交易日净流入与成交额估算<small>${f.s[0].d} → ${f.s[f.s.length - 1].d} · 亿元 · 柱为净流入（左轴），线为成交额估算（右轴）</small>`;
+    $("#fl-sub").textContent = `近${n}日合计 ${sgn(tot)}亿，其中 ${work} 天上班（≥100亿）。`;
+  }
+  let fs = flowSlice(60);
+  const yFmt = (v) => NF.format(v).replace(/\.00$/, "") + "亿";
+  const flowChart = new Chart($("#flow-chart"), {
+    type: "bar",
+    data: {
+      labels: fs.labels,
+      datasets: [
+        { type: "bar", label: "净流入", data: fs.nf, yAxisID: "y", order: 2, backgroundColor: (ctx) => (ctx.raw == null || ctx.raw >= 0 ? RED : GREEN) },
+        { type: "line", label: "成交额估算", data: fs.amt, yAxisID: "y1", order: 1, borderColor: "var(--chart-ink-2)", pointRadius: 0 },
+        { type: "line", label: "上班线 100", data: fs.labels.map(() => 100), yAxisID: "y", borderColor: "var(--chart-reference)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
+      ],
+    },
+    options: {
+      interaction: { mode: "index", intersect: false },
+      scales: {
+        x: { ticks: { maxRotation: 0, autoSkipPadding: 16 } },
+        y: { position: "left", ticks: { callback: yFmt } },
+        y1: { position: "right", beginAtZero: true, grid: { display: false }, ticks: { callback: yFmt } },
+      },
+      plugins: {
+        tooltip: {
+          filter: (it) => it.datasetIndex !== 2,
+          callbacks: { title: (it) => "20" + it[0].label, label: (ctx) => `${ctx.dataset.label} ${ctx.datasetIndex === 0 ? sgn(ctx.raw) : fmt(ctx.raw)}亿` },
+        },
+      },
+    },
+  });
+  flowText(60, fs);
+  $$("#flow [data-n]").forEach((b) => b.addEventListener("click", () => {
+    const n = +b.dataset.n;
+    $$("#flow [data-n]").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    fs = flowSlice(n);
+    flowChart.data.labels = fs.labels;
+    flowChart.data.datasets[0].data = fs.nf;
+    flowChart.data.datasets[1].data = fs.amt;
+    flowChart.data.datasets[2].data = fs.labels.map(() => 100);
+    flowChart.update();
+    flowText(n, fs);
+  }));
+
+  /* 5. Cumulative */
+  const cd = days.filter((d) => d.d >= D.cum_start && d.cum != null);
+  const wave = days.filter((d) => d.d >= "2026-01-15" && d.d <= "2026-01-28");
+  const waveSum = sum(wave, (d) => d.nf);
+  const waveMin = wave.reduce((a, d) => (d.nf < a.nf ? d : a), wave[0]);
+  const recordNf = Math.max(...days.map((d) => d.nf));
+  const events = [
+    { d: "2024-10-08", tag: "国庆后首日", text: (x) => `单日 ${sgn(x.nf)}亿，节后开盘放量进场。` },
+    { d: "2025-04-08", tag: "历史纪录", text: (x) => `单日 ${sgn(x.nf)}亿${x.nf === recordNf ? "，为样本期最大单日净流入" : ""}。` },
+    { d: waveMin.d, tag: "1月撤退潮", when: "2026-01-15 → 01-28", wave: true, text: () => `${wave.length}个交易日合计 ${sgn(waveSum)}亿，含样本期最大流出日 ${waveMin.d}（${sgn(waveMin.nf)}亿）。` },
+    { d: "2026-11-03", tag: "回流", text: (x) => `单日 ${sgn(x.nf)}亿，近期最大的一次上班。` },
+  ].filter((e) => byDay(e.d));
+  const cdIdx = Object.fromEntries(cd.map((d, i) => [d.d, i]));
+  const evAt = {};
+  events.forEach((e) => { const x = byDay(e.d); if (cdIdx[e.d] != null) evAt[cdIdx[e.d]] = { label: e.wave ? `${e.tag} ${sgn(waveSum)}` : `${e.d.slice(2)} ${sgn(x.nf)}`, wave: e.wave }; });
+  new Chart($("#cum-chart"), {
+    type: "line",
+    data: { labels: cd.map((d) => d.d), datasets: [{ label: "累计净流入", data: cd.map((d) => d.cum), fill: true, pointRadius: cd.map((d, i) => (evAt[i] ? 4 : 0)) }] },
+    options: {
+      scales: { x: { ticks: { maxRotation: 0, autoSkipPadding: 24, callback: function (v) { return this.getLabelForValue(v).slice(0, 7); } } }, y: { ticks: { callback: yFmt } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `累计 ${sgn(ctx.raw)}亿 · 当日 ${sgn(cd[ctx.dataIndex].nf)}亿` } },
+        datalabels: { ...Hark.labels.points, display: (ctx) => !!evAt[ctx.dataIndex], align: (ctx) => (evAt[ctx.dataIndex] && evAt[ctx.dataIndex].wave ? "bottom" : "top"), formatter: (v, ctx) => (evAt[ctx.dataIndex] ? evAt[ctx.dataIndex].label : "") },
+      },
+    },
+  });
+  const cmin = cd.reduce((a, d) => (d.cum < a.cum ? d : a), cd[0]), cmax = cd.reduce((a, d) => (d.cum > a.cum ? d : a), cd[0]);
+  $("#cm-cap").textContent = `${D.cum_start} → ${D.as_of} · 亿元 · 最高 ${sgn(cmax.cum)}（${cmax.d}），最低 ${sgn(cmin.cum)}（${cmin.d}）`;
+  $("#cm-sub").textContent = `累计至今 ${sgn(S.cum)}亿；2026年内 ${sgn(S.ytd)}亿。`;
+  $("#cm-events").innerHTML = events.map((e) => { const x = byDay(e.d); return `<li><p class="timeline__when">${e.when || e.d}</p><div class="timeline__what"><b>${e.tag}</b> · ${e.text(x)} 之后累计 ${sgn(x.cum)}亿。</div></li>`; }).join("");
+
+  /* 6. Categories */
+  const cols = [
+    ["当日", days.slice(-1)], ["近5日", days.slice(-5)], ["近20日", days.slice(-20)], ["近60日", days.slice(-60)],
+    ["2026年内", days.filter((d) => d.d >= "2026-01-01")], ["自2023-10累计", days.filter((d) => d.d >= D.cum_start)],
+  ];
+  const catVal = (set, c) => sum(set, (d) => d.cat[c]);
+  $("#cat-table tbody").innerHTML = D.cats.map((c) => `<tr><th scope="row">${c}</th>${cols.map(([l, set]) => cell(l, money(catVal(set, c)), "x-n")).join("")}</tr>`).join("")
+    + `<tr class="is-highlight"><th scope="row">篮子合计</th>${cols.map(([l, set]) => cell(l, money(sum(set, (d) => d.nf)), "num")).join("")}</tr>`;
+  const catColor = (i) => (i < 7 ? `var(--chart-${i + 1})` : "var(--chart-ink-3)");
+  const last20 = days.slice(-20);
+  new Chart($("#cat-chart"), {
+    type: "bar",
+    data: { labels: last20.map((d) => d.d.slice(5)), datasets: D.cats.map((c, i) => ({ label: c, data: last20.map((d) => d.cat[c] || 0), backgroundColor: catColor(i) })) },
+    options: {
+      interaction: { mode: "index", intersect: false },
+      scales: { x: { stacked: true, ticks: { maxRotation: 0, autoSkipPadding: 12 } }, y: { stacked: true, ticks: { callback: yFmt } } },
+      plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label} ${sgn(ctx.raw)}亿` } } },
+    },
+  });
+
+  /* 7. Rankings */
+  const ago = (d) => { const n = days.length - 1 - dayIdx[d]; return n === 0 ? "最新" : `${n}个交易日前`; };
+  const rankRows = (list, lab) => list.map((r, i) => `<tr><th scope="row">${i + 1}</th>${cell("日期", r.d, "x-n")}${cell(lab, money(r.nf), "num")}${cell("成交额估算", fmt(r.amt), "x-n")}${cell("距今", ago(r.d), "muted")}</tr>`).join("");
+  $("#in-table tbody").innerHTML = rankRows(D.top_in, "净流入");
+  $("#out-table tbody").innerHTML = rankRows(D.top_out, "净流出");
+
+  /* 8. Funds */
+  const FC = [
+    { k: "name", t: "名称 / 代码", s: 1 }, { k: "cat", t: "类别", s: 1 }, { k: "ex", t: "交易所", s: 1 },
+    { k: "shares_yi", t: "份额(亿份)" }, { k: "close", t: "收盘价", dec: 3 }, { k: "aum_yi", t: "规模(亿元)" },
+    { k: "f1", t: "当日", flow: 1 }, { k: "f5", t: "近5日", flow: 1 }, { k: "f20", t: "近20日", flow: 1 },
+    { k: "f60", t: "近60日", flow: 1 }, { k: "ytd", t: "2026年内", flow: 1 }, { k: "cum", t: "累计", flow: 1 },
+  ];
+  let fSort = { k: "aum_yi", dir: -1 }, fCat = "全部";
+  $("#fd-table thead tr").innerHTML = FC.map((c) => `<th scope="col" data-k="${c.k}"><button class="x-sort" data-k="${c.k}">${c.t}</button></th>`).join("");
+  $("#fd-msort").innerHTML = FC.flatMap((c) => [`<option value="${c.k}:-1">${c.t} ↓</option>`, `<option value="${c.k}:1">${c.t} ↑</option>`]).join("");
+  $("#fd-filter").innerHTML = ["全部", ...D.cats].map((c) => `<button class="x-tog" type="button" data-cat="${c}" aria-pressed="${c === "全部"}">${c}</button>`).join("");
+  function fundCell(f, c) {
+    const v = f[c.k];
+    if (c.flow) return cell(c.t, money(v), c.k === "f1" ? "num" : "x-n");
+    if (c.dec) return cell(c.t, v.toFixed(c.dec), "x-n");
+    if (c.s) return cell(c.t, v);
+    return cell(c.t, fmt(v), "x-n");
+  }
+  function renderFunds() {
+    const list = D.funds.filter((f) => fCat === "全部" || f.cat === fCat);
+    const { k, dir } = fSort, isStr = FC.find((c) => c.k === k).s;
+    list.sort((a, b) => (isStr ? String(a[k]).localeCompare(String(b[k]), "zh") : a[k] - b[k]) * dir);
+    const rows = list.map((f) => `<tr><th scope="row">${f.name}<small>${f.code}</small></th>${FC.slice(1).map((c) => fundCell(f, c)).join("")}</tr>`).join("");
+    const tot = (key) => sum(list, (f) => f[key]);
+    const total = `<tr class="is-highlight"><th scope="row">合计<small>${list.length}只</small></th>${FC.slice(1).map((c) => {
+      if (c.s || c.dec) return `<td class="is-empty"></td>`;
+      return c.flow ? cell(c.t, money(tot(c.k)), "num") : cell(c.t, fmt(tot(c.k)), "num");
+    }).join("")}</tr>`;
+    $("#fd-table tbody").innerHTML = rows + total;
+    $$("#fd-table thead th").forEach((th) => { const b = $(".x-sort", th), on = th.dataset.k === k; b.textContent = FC.find((c) => c.k === th.dataset.k).t + (on ? (dir < 0 ? " ↓" : " ↑") : ""); if (on) th.setAttribute("aria-sort", dir < 0 ? "descending" : "ascending"); else th.removeAttribute("aria-sort"); });
+    $("#fd-msort").value = `${k}:${dir}`;
+  }
+  $$("#fd-table .x-sort").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.k; const isStr = FC.find((c) => c.k === k).s; fSort = { k, dir: fSort.k === k ? -fSort.dir : isStr ? 1 : -1 }; renderFunds(); }));
+  $("#fd-msort").addEventListener("change", (e) => { const [k, d] = e.target.value.split(":"); fSort = { k, dir: +d }; renderFunds(); });
+  $$("#fd-filter .x-tog").forEach((b) => b.addEventListener("click", () => { fCat = b.dataset.cat; $$("#fd-filter .x-tog").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); renderFunds(); }));
+  renderFunds();
+
+  /* 9. CSV */
+  const esc = (v) => { const s = v == null ? "" : String(v); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const toCSV = (rows) => rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  const f2 = (v) => (ok(v) ? v.toFixed(2) : "");
+  const CSV = {
+    daily: { name: `wangwangdui_daily_${D.as_of}.csv`, text: toCSV([["日期", "净流入", "成交额估算", "累计", ...D.cats], ...days.map((d) => [d.d, f2(d.nf), f2(d.amt), f2(d.cum), ...D.cats.map((c) => f2(d.cat[c] || 0))])]) },
+    funds: { name: `wangwangdui_funds_${D.as_of}.csv`, text: toCSV([["代码", "名称", "类别", "交易所", "份额(亿份)", "收盘价", "规模(亿元)", "当日", "近5日", "近20日", "近60日", "2026年内", "累计", "当日成交额估算"], ...D.funds.map((f) => [f.code, f.name, f.cat, f.ex, f2(f.shares_yi), f.close.toFixed(3), f2(f.aum_yi), f2(f.f1), f2(f.f5), f2(f.f20), f2(f.f60), f2(f.ytd), f2(f.cum), f2(f.amt1)])]) },
+  };
+  const msg = (t) => { $("#ex-msg").textContent = t; };
+  $$("[data-dl]").forEach((b) => b.addEventListener("click", () => {
+    const c = CSV[b.dataset.dl];
+    try {
+      const url = URL.createObjectURL(new Blob(["\ufeff" + c.text], { type: "text/csv;charset=utf-8" }));
+      const a = document.createElement("a");
+      a.href = url; a.download = c.name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      msg(`已触发下载 ${c.name}。如没有反应（沙盒限制），请用复制或下方文本框。`);
+    } catch (e) { msg("下载被拦截，请用复制或下方文本框。"); }
+  }));
+  const ta = $("#ex-text");
+  function fallbackCopy(text) { ta.value = text; ta.closest("details").open = true; ta.select(); try { return document.execCommand("copy"); } catch (e) { return false; } }
+  $$("[data-cp]").forEach((b) => b.addEventListener("click", () => {
+    const key = b.dataset.cp, c = CSV[key];
+    showText(key);
+    const done = () => msg(`已复制 ${c.name.replace(".csv", "")}（${c.text.split("\r\n").length - 1} 行）。`);
+    const fail = () => (fallbackCopy(c.text) ? done() : msg("复制被拦截：已在下方文本框选中全部内容，请手动复制。"));
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c.text).then(done, fail); else fail();
+  }));
+  function showText(key) { ta.value = CSV[key].text; $$("[data-tx]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.tx === key ? "true" : "false")); }
+  $$("[data-tx]").forEach((b) => b.addEventListener("click", () => showText(b.dataset.tx)));
+  showText("daily");
+
+  /* 10. Notes */
+  const xc = [["2026-11-03", "746.3"], ["2026-11-04", "439.55"], ["2026-11-05", "65.06"]];
+  $("#nt-xcheck").textContent = xc.map(([d, v]) => `${d.slice(5)} ${byDay(d) ? fmt(byDay(d).nf) : "—"} vs ${v}`).join("，");
+  $("#nt-asof").textContent = D.as_of;
+  $("#sp-table tbody").innerHTML = D.splits.map((s) => {
+    const kind = s.k < 1 ? `${Math.round(1 / s.k)}:1 合并` : `1:${Math.round(s.k)} 拆分`;
+    return `<tr><th scope="row">${s.name}<small>${s.code}</small></th>${cell("日期", s.date, "x-n")}${cell("份额比", s.ratio.toFixed(3), "x-n")}${cell("判定", kind)}${cell("原始流入", money(s.raw_flow), "x-n")}${cell("修正后", money(s.adj_flow), "num")}</tr>`;
+  }).join("") || `<tr><th scope="row">暂无</th></tr>`;
+  $("#ft-text").textContent = `数据截至 ${D.as_of} · 盘中快照 ${snap.generated_at}`;
+})();
+    </script>
+    <script>
+const S = {"quote_ts":"20261106161500","quote":{"510310":{"price":4.009,"prev":4.072,"pct":-1.55,"amount_yi":14.0456,"ts":"20261106161458"},"588000":{"price":1.326,"prev":1.358,"pct":-2.36,"amount_yi":129.6616,"ts":"20261106161452"},"159915":{"price":2.48,"prev":2.584,"pct":-4.02,"amount_yi":138.4311,"ts":"20261106161448"},"510300":{"price":4.124,"prev":4.195,"pct":-1.69,"amount_yi":52.1167,"ts":"20261106161452"},"563360":{"price":1.112,"prev":1.133,"pct":-1.85,"amount_yi":68.286,"ts":"20261106161444"},"159352":{"price":1.098,"prev":1.12,"pct":-1.96,"amount_yi":61.4733,"ts":"20261106161451"},"512100":{"price":2.65,"prev":2.711,"pct":-2.25,"amount_yi":42.2059,"ts":"20261106161500"},"159338":{"price":1.054,"prev":1.072,"pct":-1.68,"amount_yi":57.6551,"ts":"20261106161442"},"510500":{"price":6.629,"prev":6.784,"pct":-2.28,"amount_yi":35.9168,"ts":"20261106161450"},"159949":{"price":1.104,"prev":1.154,"pct":-4.33,"amount_yi":26.373,"ts":"20261106161439"},"588080":{"price":1.285,"prev":1.317,"pct":-2.43,"amount_yi":28.9061,"ts":"20261106161455"},"510050":{"price":2.902,"prev":2.93,"pct":-0.96,"amount_yi":18.0551,"ts":"20261106161451"},"510210":{"price":0.946,"prev":0.956,"pct":-1.05,"amount_yi":7.3964,"ts":"20261106161437"},"159845":{"price":2.716,"prev":2.775,"pct":-2.13,"amount_yi":21.9865,"ts":"20261106161445"},"159952":{"price":1.506,"prev":1.567,"pct":-3.89,"amount_yi":20.4803,"ts":"20261106161430"},"159361":{"price":1.076,"prev":1.096,"pct":-1.82,"amount_yi":39.9623,"ts":"20261106161442"},"512050":{"price":1.049,"prev":1.069,"pct":-1.87,"amount_yi":12.5624,"ts":"20261106161445"},"159633":{"price":2.791,"prev":2.854,"pct":-2.21,"amount_yi":9.8459,"ts":"20261106161415"},"560010":{"price":2.715,"prev":2.771,"pct":-2.02,"amount_yi":13.8903,"ts":"20261106161448"},"159919":{"price":4.304,"prev":4.373,"pct":-1.58,"amount_yi":10.5745,"ts":"20261106161445"}},"avg20":{"510310":34.88,"588000":119.42,"159915":118.5,"510300":86.76,"563360":54.02,"159352":45.44,"512100":52.74,"159338":42.04,"510500":51.45,"159949":27.01,"588080":23.01,"510050":34.4,"510210":12.29,"159845":24.76,"159952":17.07,"159361":22.73,"512050":13.11,"159633":11.39,"560010":15.13,"159919":24.07},"flow_date":"2026-11-05","flow":{"510310":3.01,"588000":17.64,"159915":0.13,"510300":5.4,"563360":10.6,"159352":12.43,"512100":-8.89,"159338":8.59,"510500":-4.61,"159949":6.87,"588080":14.9,"510050":-4.19,"510210":-1.46,"159845":-8.91,"159952":4.77,"159361":4.93,"512050":4.94,"159633":-0.63,"560010":-0.5,"159919":0.0}};
+(function () {
+  const $ = (s, r) => (r || document).querySelector(s);
+  const NF = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const ok = (v) => v != null && !isNaN(v);
+  const fmt = (v) => (ok(v) ? NF.format(v) : "—");
+  const sgn = (v) => (ok(v) ? (v > 0 ? "+" : "") + NF.format(v) : "—");
+  const funds = (D && D.funds) || [];
+  const meta = Object.fromEntries(funds.map((f) => [f.code, f]));
+  const codes = funds.length ? funds.map((f) => f.code) : Object.keys(S.quote);
+  const hmOf = (ts) => ts.slice(8, 10) + ":" + ts.slice(10, 12);
+  $("#se-flow-h").textContent = `申赎净流入(亿) · ${S.flow_date.slice(5)}份额`;
+
+  let rows = [], sortK = { k: "amt", dir: -1 }, quoteHM = hmOf(S.quote_ts);
+  function build(src) {
+    rows = codes.map((c) => {
+      const q = src[c] || {}, f = meta[c] || {};
+      const amt = ok(q.amt) ? q.amt : NaN, avg = S.avg20[c];
+      return { code: c, name: f.name || c, cat: f.cat || "", amt, pct: q.pct, ratio: ok(amt) && avg ? amt / avg : NaN, flow: S.flow[c] };
+    });
+    const total = rows.reduce((a, r) => a + (ok(r.amt) ? r.amt : 0), 0);
+    rows.forEach((r) => (r.share = total && ok(r.amt) ? (r.amt / total) * 100 : NaN));
+    const up = rows.filter((r) => r.pct > 0).length, down = rows.filter((r) => r.pct < 0).length;
+    const vol = rows.filter((r) => r.ratio >= 1.5).length;
+    $("#se-sum").textContent = `合计成交额 ${fmt(total)}亿 · 上涨 ${up} 只 / 下跌 ${down} 只 · 放量(≥1.5×) ${vol} 只 · 行情时点 ${quoteHM}`;
+    render();
+  }
+  const td = (label, html, c) => `<td data-label="${label}"${c ? ` class="${c}"` : ""}>${html}</td>`;
+  function render() {
+    const { k, dir } = sortK;
+    const val = (r) => r[k];
+    const list = rows.slice().sort((a, b) => {
+      const x = val(a), y = val(b);
+      if (typeof x === "string") return x.localeCompare(y, "zh") * dir;
+      const xn = ok(x), yn = ok(y);
+      if (!xn || !yn) return xn ? -1 : yn ? 1 : 0;
+      return (x - y) * dir;
+    });
+    const maxAmt = Math.max(...rows.map((r) => (ok(r.amt) ? r.amt : 0)), 1e-9);
+    const maxPct = Math.max(...rows.map((r) => (ok(r.pct) ? Math.abs(r.pct) : 0)), 1e-9);
+    const maxFlow = Math.max(...rows.map((r) => (ok(r.flow) ? Math.abs(r.flow) : 0)), 1e-9);
+    $("#se-table tbody").innerHTML = list.map((r) => {
+      const amt = `<div class="x-amt"><i style="width:${ok(r.amt) ? ((r.amt / maxAmt) * 100).toFixed(1) : 0}%"></i><span>${fmt(r.amt)}</span></div>`;
+      let pctBg = "";
+      if (ok(r.pct) && r.pct !== 0) {
+        const a = Math.round(10 + 32 * (Math.abs(r.pct) / maxPct));
+        pctBg = ` style="background: color-mix(in srgb, var(${r.pct > 0 ? "--fill-system-red" : "--fill-system-green"}) ${a}%, transparent)"`;
+      }
+      let ratio = "—";
+      if (ok(r.ratio)) {
+        const t = r.ratio.toFixed(2) + "×";
+        ratio = r.ratio >= 2 ? `<b>${t}</b><span class="x-badge x-badge--strong">2倍放量</span>` : r.ratio >= 1.5 ? `${t}<span class="x-badge">放量</span>` : r.ratio <= 0.75 ? `<span class="x-dim">${t}</span>` : t;
+      }
+      const w = ok(r.flow) ? ((Math.abs(r.flow) / maxFlow) * 50).toFixed(1) : 0;
+      const flow = `<div class="x-div"><span class="x-div__track" aria-hidden="true">${ok(r.flow) && r.flow !== 0 ? `<i class="${r.flow > 0 ? "pos" : "neg"}" style="width:${w}%"></i>` : ""}</span><b>${sgn(r.flow)}</b></div>`;
+      return `<tr><th scope="row">${r.code}</th>${td("名称", `${r.name}${r.cat ? `<small>${r.cat}</small>` : ""}`, "x-name")}${td("当日成交额(亿)", amt)}${td("占比", ok(r.share) ? r.share.toFixed(1) + "%" : "—", "x-n")}<td class="x-pct"${pctBg}>${ok(r.pct) ? sgn(r.pct) + "%" : "—"}</td>${td("放量倍数", ratio, "x-n")}${td("申赎净流入", flow)}</tr>`;
+    }).join("");
+    document.querySelectorAll("#se-table thead th").forEach((th) => {
+      const b = th.querySelector(".x-sort");
+      th.removeAttribute("aria-sort");
+      b.textContent = b.textContent.replace(/[ ↑↓]+$/, "");
+      if (b.dataset.k === k) { th.setAttribute("aria-sort", dir < 0 ? "descending" : "ascending"); b.textContent += dir < 0 ? " ↓" : " ↑"; }
+    });
+  }
+  function fromSnapshot() {
+    const src = {};
+    for (const c in S.quote) src[c] = { amt: S.quote[c].amount_yi, pct: S.quote[c].pct };
+    quoteHM = hmOf(S.quote_ts);
+    const st = $("#se-status"); st.textContent = "快照：2026-11-06 16:15 收盘"; st.classList.remove("chip--solid");
+    build(src);
+  }
+  document.querySelectorAll("#se-table .x-sort").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.k, text = k === "code" || k === "name";
+    sortK = { k, dir: sortK.k === k ? -sortK.dir : text ? 1 : -1 };
+    render();
+  }));
+  document.addEventListener("x-quote", (e) => {
+    const d = e.detail;
+    if (!d || !d.rows || !d.rows.length) { fromSnapshot(); return; }
+    const src = {};
+    d.rows.forEach((r) => (src[r.code] = { amt: r.amt, pct: r.pct }));
+    quoteHM = hmOf(d.ts);
+    const st = $("#se-status");
+    st.textContent = d.live ? `实时 · ${quoteHM} · 每60秒刷新` : `最近报价 · ${d.ts.slice(4, 6)}-${d.ts.slice(6, 8)} ${quoteHM}`;
+    st.classList.toggle("chip--solid", !!d.live);
+    build(src);
+  });
+  fromSnapshot();
+})();
+    </script>
+  </body>
+</html>
