@@ -94,15 +94,14 @@
         .x-scroll.x-se tbody th small { display: block; margin-top: 2px; font: var(--type-caption); line-height: 1.4; color: var(--text-secondary); }
         .x-scroll.x-se .x-tag--d { display: none; }
         .x-scroll.x-se .x-tag--m { display: inline-block; margin-left: 6px; padding: 0 6px; font-size: var(--size-caption); line-height: 1.4; vertical-align: 0; }
-        .x-scroll.x-se tbody td.x-flowc { grid-column: 4 / 6; grid-row: 1; text-align: right; font: var(--type-heading); line-height: 1.2; }
+        .x-scroll.x-se tbody td.x-flowc { grid-column: 4 / 6; grid-row: 1; justify-self: end; text-align: right; font: var(--type-heading); line-height: 1.2; }
         .x-scroll.x-se tbody td.x-flowc::after { content: "申赎净流入(亿)"; display: block; margin-top: 2px; font: var(--type-caption); line-height: 1.35; color: var(--text-secondary); white-space: nowrap; }
         .x-scroll.x-se td.x-flowc .x-div__track { display: none; }
         .x-scroll.x-se td.x-flowc .x-div { justify-content: flex-end; }
         .x-scroll.x-se td.x-flowc .x-div b { min-width: 0; font-variant-numeric: tabular-nums; }
         /* 第2行：5等分指标网格 */
-        .x-scroll.x-se tbody tr::after { content: ""; grid-column: 1 / -1; grid-row: 2; align-self: start; height: 1px; margin-top: 8px; background: var(--stroke-secondary); }
         .x-scroll.x-se tbody td:not(.x-flowc) {
-          grid-row: 2; margin-top: 8px; padding-top: 8px; text-align: left;
+          grid-row: 2; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--stroke-secondary); text-align: left;
           font: var(--type-caption); line-height: 1.4; font-weight: var(--weight-medium); color: var(--text-primary);
           font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
@@ -113,7 +112,20 @@
         .x-scroll.x-se td.x-pct .x-pv { display: inline-block; max-width: 100%; padding: 0 2px; margin-left: 0; border-radius: 3px; letter-spacing: -0.03em; background: var(--pbg, transparent); overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
         .x-scroll.x-se td .x-badge { width: 6px; height: 6px; margin-left: 3px; padding: 0; border-radius: 50%; font-size: 0; vertical-align: 1px; border-color: var(--text-primary); }
         .x-scroll.x-se td .x-badge--strong { background: var(--fill-primary); }
+        /* 显式列位，杜绝隐式列 */
+        .x-scroll.x-se tbody tr { grid-auto-columns: 0; }
+        .x-scroll.x-se tbody tr::after, .x-scroll.x-se tbody tr::before { content: none; display: none; }
+        .x-scroll.x-se tbody td:nth-of-type(2) { grid-column: 1; }
+        .x-scroll.x-se tbody td:nth-of-type(3) { grid-column: 2; }
+        .x-scroll.x-se tbody td:nth-of-type(4) { grid-column: 3; }
+        .x-scroll.x-se tbody td:nth-of-type(5) { grid-column: 4; }
+        .x-scroll.x-se tbody td:nth-of-type(6) { grid-column: 5; }
+        /* caption */
+        .x-scroll.x-se caption { display: block; width: auto; text-align: left; padding: 0 0 10px; }
+        .x-scroll.x-se caption .x-cap-d { display: none; }
+        .x-scroll.x-se caption .x-cap-m { display: inline; }
       }
+      @media (min-width: 600px) { .x-scroll.x-se caption .x-cap-m { display: none; } }
       @media (min-width: 600px) {
         .x-scroll.x-se .x-tag--m { display: none; }
         .x-scroll.x-se td.x-pct[style*="--pbg"] { background: var(--pbg); }
@@ -253,7 +265,7 @@
           <label class="x-msort">排序<select id="se-msort"></select></label>
           <div class="x-scroll x-se">
             <table id="se-table">
-              <caption>单位亿元。点表头排序，再点一次切换升降序；涨跌幅底色红涨绿跌，越深幅度越大。</caption>
+              <caption><span class="x-cap-d">单位亿元。点表头排序，再点一次切换升降序；涨跌幅底色红涨绿跌，越深幅度越大。</span><span class="x-cap-m">单位亿元；涨跌底色红涨绿跌，越深幅度越大。</span></caption>
               <thead>
                 <tr>
                   <th scope="col"><button class="x-sort" data-k="name">名称 / 代码</button></th>
