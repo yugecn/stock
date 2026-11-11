@@ -637,15 +637,16 @@ const D = Hark.data("dash");
       datasets: [
         { type: "bar", label: "净流入", data: fs.nf, yAxisID: "y", order: 2, backgroundColor: (ctx) => (ctx.raw == null || ctx.raw >= 0 ? RED : GREEN) },
         { type: "line", label: "成交额估算", data: fs.amt, yAxisID: "y1", order: 1, borderColor: "var(--chart-ink-2)", pointRadius: 0 },
-        { type: "line", label: "上班线 100", data: fs.labels.map(() => 100), yAxisID: "y", borderColor: "var(--chart-reference)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
+        { type: "line", label: "上班线", data: fs.labels.map(() => 100), yAxisID: "y", borderColor: "var(--chart-reference)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
       ],
     },
     options: {
+      layout: { padding: { right: 4 } },
       interaction: { mode: "index", intersect: false },
       scales: {
         x: { ticks: { maxRotation: 0, autoSkipPadding: 16 } },
         y: { position: "left", ticks: { callback: yFmt } },
-        y1: { position: "right", beginAtZero: true, grid: { display: false }, ticks: { callback: yFmt } },
+        y1: { position: "right", beginAtZero: true, grid: { display: false }, ticks: { maxTicksLimit: 5, callback: (v) => (window.matchMedia("(max-width: 599px)").matches ? (Math.abs(v) >= 1000 ? +(v / 1000).toFixed(1) + "k" : String(v)) : yFmt(v)) } },
       },
       plugins: {
         tooltip: {
