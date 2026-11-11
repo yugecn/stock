@@ -114,14 +114,6 @@
         min-height: var(--tap); padding: 0 12px; border-radius: var(--r-s); border: 1px solid var(--stroke-primary);
         background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-small);
       }
-      .x-csv { border: 1px solid var(--stroke-secondary); border-radius: var(--r-m); padding: 14px 16px; }
-      .x-csv summary { font: var(--type-label); cursor: pointer; min-height: 24px; }
-      .x-csv[open] summary { margin-bottom: 12px; }
-      .x-csv textarea {
-        display: block; width: 100%; height: 260px; margin-top: 12px; padding: 12px; resize: vertical;
-        border: 1px solid var(--stroke-primary); border-radius: var(--r-s); background: var(--fill-tertiary);
-        color: var(--text-primary); font: 12px/1.5 "Geist Mono", ui-monospace, monospace;
-      }
       .x-sum { font: var(--type-label); color: var(--text-primary); margin-top: 12px; }
       .x-scroll { margin-inline: -12px; padding-inline: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
       .x-scroll table { min-width: 820px; }
@@ -340,29 +332,6 @@
               <tbody></tbody>
             </table>
           </div>
-        </section>
-
-        <section class="section" id="export">
-          <div class="head">
-            <p class="head__eyebrow">CSV 导出</p>
-            <h2>把数据带走。</h2>
-            <p class="head__sub">UTF-8 带 BOM，Excel 直接打开不乱码。</p>
-          </div>
-          <div class="links">
-            <button class="btn x-btn" type="button" data-dl="daily">导出每日净流入CSV</button>
-            <button class="btn x-btn" type="button" data-dl="funds">导出20只明细CSV</button>
-            <button class="btn x-btn" type="button" data-cp="daily">复制每日CSV</button>
-            <button class="btn x-btn" type="button" data-cp="funds">复制明细CSV</button>
-          </div>
-          <p class="fineprint" id="ex-msg">页面若在沙盒中运行，下载可能被拦截，可改用复制或下方文本框。</p>
-          <details class="x-csv">
-            <summary>查看 CSV 文本，手动复制</summary>
-            <div class="x-bar" role="group" aria-label="选择CSV">
-              <button class="x-tog" type="button" data-tx="daily" aria-pressed="true">每日净流入</button>
-              <button class="x-tog" type="button" data-tx="funds" aria-pressed="false">20只明细</button>
-            </div>
-            <textarea id="ex-text" readonly aria-label="CSV 文本"></textarea>
-          </details>
         </section>
 
         <section class="section" id="notes" data-nav="说明">
@@ -768,38 +737,6 @@ const D = Hark.data("dash");
   $("#fd-msort").addEventListener("change", (e) => { const [k, d] = e.target.value.split(":"); fSort = { k, dir: +d }; renderFunds(); });
   $$("#fd-filter .x-tog").forEach((b) => b.addEventListener("click", () => { fCat = b.dataset.cat; $$("#fd-filter .x-tog").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); renderFunds(); }));
   renderFunds();
-
-  /* 9. CSV */
-  const esc = (v) => { const s = v == null ? "" : String(v); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-  const toCSV = (rows) => rows.map((r) => r.map(esc).join(",")).join("\r\n");
-  const f2 = (v) => (ok(v) ? v.toFixed(2) : "");
-  const CSV = {
-    daily: { name: `wangwangdui_daily_${D.as_of}.csv`, text: toCSV([["日期", "净流入", "成交额估算", "累计", ...D.cats], ...days.map((d) => [d.d, f2(d.nf), f2(d.amt), f2(d.cum), ...D.cats.map((c) => f2(d.cat[c] || 0))])]) },
-    funds: { name: `wangwangdui_funds_${D.as_of}.csv`, text: toCSV([["代码", "名称", "类别", "交易所", "份额(亿份)", "收盘价", "规模(亿元)", "当日", "近5日", "近20日", "近60日", "2026年内", "累计", "当日成交额估算"], ...D.funds.map((f) => [f.code, f.name, f.cat, f.ex, f2(f.shares_yi), f.close.toFixed(3), f2(f.aum_yi), f2(f.f1), f2(f.f5), f2(f.f20), f2(f.f60), f2(f.ytd), f2(f.cum), f2(f.amt1)])]) },
-  };
-  const msg = (t) => { $("#ex-msg").textContent = t; };
-  $$("[data-dl]").forEach((b) => b.addEventListener("click", () => {
-    const c = CSV[b.dataset.dl];
-    try {
-      const url = URL.createObjectURL(new Blob(["\ufeff" + c.text], { type: "text/csv;charset=utf-8" }));
-      const a = document.createElement("a");
-      a.href = url; a.download = c.name; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      msg(`已触发下载 ${c.name}。如没有反应（沙盒限制），请用复制或下方文本框。`);
-    } catch (e) { msg("下载被拦截，请用复制或下方文本框。"); }
-  }));
-  const ta = $("#ex-text");
-  function fallbackCopy(text) { ta.value = text; ta.closest("details").open = true; ta.select(); try { return document.execCommand("copy"); } catch (e) { return false; } }
-  $$("[data-cp]").forEach((b) => b.addEventListener("click", () => {
-    const key = b.dataset.cp, c = CSV[key];
-    showText(key);
-    const done = () => msg(`已复制 ${c.name.replace(".csv", "")}（${c.text.split("\r\n").length - 1} 行）。`);
-    const fail = () => (fallbackCopy(c.text) ? done() : msg("复制被拦截：已在下方文本框选中全部内容，请手动复制。"));
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(c.text).then(done, fail); else fail();
-  }));
-  function showText(key) { ta.value = CSV[key].text; $$("[data-tx]").forEach((x) => x.setAttribute("aria-pressed", x.dataset.tx === key ? "true" : "false")); }
-  $$("[data-tx]").forEach((b) => b.addEventListener("click", () => showText(b.dataset.tx)));
-  showText("daily");
 
   /* 10. Notes */
   const xc = [["2026-11-03", "746.3"], ["2026-11-04", "439.55"], ["2026-11-05", "65.06"]];
