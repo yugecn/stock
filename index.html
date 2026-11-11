@@ -683,23 +683,40 @@ const D = Hark.data("dash");
   ].filter((e) => byDay(e.d));
   const cdIdx = Object.fromEntries(cd.map((d, i) => [d.d, i]));
   const evAt = {};
-  events.forEach((e) => { const x = byDay(e.d); if (cdIdx[e.d] != null) evAt[cdIdx[e.d]] = { label: e.wave ? `${e.tag} ${sgn(waveSum)}` : `${e.d.slice(2)} ${sgn(x.nf)}`, wave: e.wave }; });
-  new Chart($("#cum-chart"), {
+  const evNo = ["①", "②", "③", "④", "⑤", "⑥"];
+  events.forEach((e, k) => { e.no = evNo[k] || String(k + 1); const x = byDay(e.d); if (cdIdx[e.d] != null) evAt[cdIdx[e.d]] = { label: e.wave ? `${e.tag} ${sgn(waveSum)}` : `${e.d.slice(2)} ${sgn(x.nf)}`, wave: e.wave, no: e.no, k: k, nearEnd: cdIdx[e.d] > cd.length * 0.85 }; });
+  const cmMq = window.matchMedia("(max-width: 599px)");
+  const cmNarrow = () => cmMq.matches;
+  const cmEv = (ctx) => evAt[ctx.dataIndex];
+  const cumChart = new Chart($("#cum-chart"), {
     type: "line",
     data: { labels: cd.map((d) => d.d), datasets: [{ label: "累计净流入", data: cd.map((d) => d.cum), fill: true, pointRadius: cd.map((d, i) => (evAt[i] ? 4 : 0)) }] },
     options: {
+      layout: { padding: { top: 32, right: 12, bottom: 4 } },
       scales: { x: { ticks: { maxRotation: 0, autoSkipPadding: 24, callback: function (v) { return this.getLabelForValue(v).slice(0, 7); } } }, y: { ticks: { callback: yFmt } } },
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: (ctx) => `累计 ${sgn(ctx.raw)}亿 · 当日 ${sgn(cd[ctx.dataIndex].nf)}亿` } },
-        datalabels: { ...Hark.labels.points, display: (ctx) => !!evAt[ctx.dataIndex], align: (ctx) => (evAt[ctx.dataIndex] && evAt[ctx.dataIndex].wave ? "bottom" : "top"), formatter: (v, ctx) => (evAt[ctx.dataIndex] ? evAt[ctx.dataIndex].label : "") },
+        datalabels: {
+          ...Hark.labels.points,
+          clip: false,
+          display: (ctx) => (cmEv(ctx) ? true : false),
+          anchor: (ctx) => { const e = cmEv(ctx); return e && !cmNarrow() && e.nearEnd ? "center" : "end"; },
+          align: (ctx) => { const e = cmEv(ctx); if (!e) return "top"; if (cmNarrow()) return "top"; if (e.nearEnd) return "left"; return e.k % 2 === 0 ? "top" : "bottom"; },
+          offset: (ctx) => { const e = cmEv(ctx); return e && !cmNarrow() && e.nearEnd ? 8 : 4; },
+          formatter: (v, ctx) => { const e = cmEv(ctx); if (!e) return ""; return cmNarrow() ? e.no : e.label; },
+        },
       },
     },
   });
+  const cmRefresh = () => cumChart.update("none");
+  if (cmMq.addEventListener) cmMq.addEventListener("change", cmRefresh); else if (cmMq.addListener) cmMq.addListener(cmRefresh);
+  let cmLastNarrow = cmNarrow();
+  window.addEventListener("resize", () => { const n = cmNarrow(); if (n !== cmLastNarrow) { cmLastNarrow = n; cmRefresh(); } });
   const cmin = cd.reduce((a, d) => (d.cum < a.cum ? d : a), cd[0]), cmax = cd.reduce((a, d) => (d.cum > a.cum ? d : a), cd[0]);
   $("#cm-cap").textContent = `${D.cum_start} → ${D.as_of} · 亿元 · 最高 ${sgn(cmax.cum)}（${cmax.d}），最低 ${sgn(cmin.cum)}（${cmin.d}）`;
   $("#cm-sub").textContent = `累计至今 ${sgn(S.cum)}亿；2026年内 ${sgn(S.ytd)}亿。`;
-  $("#cm-events").innerHTML = events.map((e) => { const x = byDay(e.d); return `<li><p class="timeline__when">${e.when || e.d}</p><div class="timeline__what"><b>${e.tag}</b> · ${e.text(x)} 之后累计 ${sgn(x.cum)}亿。</div></li>`; }).join("");
+  $("#cm-events").innerHTML = events.map((e) => { const x = byDay(e.d); return `<li><p class="timeline__when">${e.when || e.d}</p><div class="timeline__what"><b>${e.no} ${e.tag}</b> · ${e.text(x)} 之后累计 ${sgn(x.cum)}亿。</div></li>`; }).join("");
 
   /* 6. Categories */
   const cols = [
