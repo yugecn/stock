@@ -1,4 +1,4 @@
-/* Page behavior for Hark's photo cards: a tap that shows a card's next photo, and photos that fail to load taken out. style-gates: data */
+/* Page behavior for Board's photo cards: a tap that shows a card's next photo, and photos that fail to load taken out. style-gates: data */
 ;(function () {
   'use strict'
 
@@ -45,7 +45,7 @@
   }
 
   // A photo that fails to load leaves the card. A card left with none loses its photo cell, and
-  // hark-cards.css then lays it out as a card without a photo.
+  // board-cards.css then lays it out as a card without a photo.
   function setUp(photos) {
     ;[].slice.call(photos.querySelectorAll('img')).forEach(function (img) {
       if (img.complete && !img.naturalWidth) img.remove()

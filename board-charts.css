@@ -1,4 +1,4 @@
-/* The Hark chart palette for Chart.js. Load it after hark.css. style-gates: data */
+/* The Board chart palette for Chart.js. Load it after board.css. style-gates: data */
 :root {
   --chart-ink: light-dark(#1d1d1f, #f5f5f7);            /* the story: one series, or the one that matters */
   --chart-ink-2: light-dark(#1d1d1f80, #f5f5f780);      /* the comparison beside the story; axis and legend text */

@@ -1,4 +1,4 @@
-/* Hark's photo cards: cards that open with a photo, for items a reader picks between. They use hark.css's tokens, so link this after hark.css. style-gates: data */
+/* Board's photo cards: cards that open with a photo, for items a reader picks between. They use board.css's tokens, so link this after board.css. style-gates: data */
 
 /* @component photo cards */
 /* The cards wrap into rows of as many as fit at 300px or wider. Every card in a row is as tall as the
@@ -33,8 +33,8 @@
   border-radius: var(--r-pill);
   background: var(--mat-agent);
   border: 1px solid var(--stroke-secondary);
-  -webkit-backdrop-filter: var(--hark-blur);
-  backdrop-filter: var(--hark-blur);
+  -webkit-backdrop-filter: var(--board-blur);
+  backdrop-filter: var(--board-blur);
   font: var(--type-label);
 }
 /* A card without a photo puts its tag above the name, where it covers nothing. */
@@ -44,7 +44,7 @@
   max-width: calc(100% - 40px);
   margin: 20px 20px 0;
 }
-/* The photos share one cell sized by the card's width, never by a photo. Before hark-cards.js runs
+/* The photos share one cell sized by the card's width, never by a photo. Before board-cards.js runs
    only the first shows. */
 .photo-card__photos {
   display: grid;
@@ -98,7 +98,7 @@
   min-width: 0;
   padding: 14px 20px 20px;
 }
-/* The Hark button spans the card's foot, so a row's buttons line up and the
+/* The Board button spans the card's foot, so a row's buttons line up and the
    store link under it wraps instead of squeezing the label. */
 .photo-card__body > .btn {
   align-self: stretch;

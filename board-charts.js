@@ -1,8 +1,8 @@
-/* Themes Chart.js with the Hark chart palette and adds Hark.wash, Hark.labels and Hark.data. Load it after chart.js and datalabels.js. style-gates: data */
+/* Themes Chart.js with the Board chart palette and adds Board.wash, Board.labels and Board.data. Load it after chart.js and datalabels.js. style-gates: data */
 (function () {
   "use strict";
   var Chart = window.Chart;
-  if (!Chart) throw new Error("hark-charts.js needs chart.js loaded before it");
+  if (!Chart) throw new Error("board-charts.js needs chart.js loaded before it");
   var doc = document, root = doc.documentElement;
   var TOKEN = /^var\(--[\w-]+\)$/;
   var PER_POINT = { pie: true, doughnut: true, polarArea: true };
@@ -60,7 +60,7 @@
     legend.filter = function (item, data) { return !isReference(data.datasets[item.datasetIndex]); };
     tip.backgroundColor = resolve("var(--fill-primary)");
     tip.titleColor = tip.bodyColor = resolve("var(--text-primary-on)");
-    tip.titleFont = { family: sans, size: 12, weight: 500 }; // Hark's weights stop at medium for labels
+    tip.titleFont = { family: sans, size: 12, weight: 500 }; // Board's weights stop at medium for labels
     tip.bodyFont = { family: mono, size: 12, weight: 400 };
     tip.cornerRadius = 8; tip.padding = 10; tip.usePointStyle = true; tip.boxPadding = 4;
     tip.callbacks.labelColor = outlinedSwatch; // a black series' dot would vanish on the dark tooltip
@@ -121,7 +121,7 @@
   // Headroom is the label's own size in pixels against the axis length. A bound the chart set stays.
   var LABEL_PAD_PX = 10, LABEL_HEIGHT_PX = 18, MAX_ROOM = 0.6;
   function roomAbove(chart, scale) {
-    if (!chart.$harkRoom || scale.id !== valueAxis(chart)) return;
+    if (!chart.$boardRoom || scale.id !== valueAxis(chart)) return;
     var set = chart.config.options.scales[scale.id] || {}, range = (scale.max - scale.min) || Math.abs(scale.max) || 1;
     var length = scale.isHorizontal() ? scale.width : scale.height;
     if (!length) return;
@@ -223,7 +223,7 @@
   // It runs on every update, so datasets swapped in after the chart was built are colored too.
   function assignSeries(chart) {
     // Only series left to the defaults are counted: a dashed target or a hand-colored dataset is not one.
-    var datasets = chart.config.data.datasets, open = datasets.filter(function (ds) { return !colored(ds) && !ds.$harkColor; });
+    var datasets = chart.config.data.datasets, open = datasets.filter(function (ds) { return !colored(ds) && !ds.$boardColor; });
     var areas = open.filter(filled).length, next = 0, solidAreas = stacked(chart);
     var lines = palette(open.length, OVERLAPPING[chart.config.type] || areas > 0 || solidAreas);
     datasets.forEach(function (ds) {
@@ -236,12 +236,12 @@
       }
       if (isReference(ds) && ds.order === undefined) ds.order = -1; // drawn over bars, not hidden behind them
       if (ds.pointBackgroundColor && !ds.pointBorderColor) ds.pointBorderColor = ds.pointBackgroundColor;
-      if (colored(ds) || ds.$harkColor) {
+      if (colored(ds) || ds.$boardColor) {
         if (!ds.borderColor) ds.borderColor = ds.backgroundColor; // marks colored by their fill: the outline and dots match
         if (!ds.backgroundColor && !filled(ds)) ds.backgroundColor = ds.borderColor;
       } else {
         var color = lines[next++ % lines.length];
-        ds.borderColor = color; ds.$harkColor = true;
+        ds.borderColor = color; ds.$boardColor = true;
         if (!ds.backgroundColor) ds.backgroundColor = areaColor(ds, type, color, areas, solidAreas);
       }
       if (!ds.pointBackgroundColor) ds.pointBackgroundColor = ds.borderColor;
@@ -261,7 +261,7 @@
     Object.keys(node).forEach(function (key) {
       var v = node[key];
       if (isToken(v)) slots.push({ obj: node, key: key, token: v.trim() });
-      else if (typeof v === "function" && /color$/i.test(key) && !v.$hark) node[key] = resolvingFunction(v);
+      else if (typeof v === "function" && /color$/i.test(key) && !v.$board) node[key] = resolvingFunction(v);
       else if (v && typeof v === "object" && !(key === "data" && Array.isArray(v))) tokenSlots(v, slots);
     });
     return slots;
@@ -271,7 +271,7 @@
       var v = fn.apply(this, arguments);
       return isToken(v) ? resolve(v.trim()) : v;
     };
-    out.$hark = true;
+    out.$board = true;
     return out;
   }
   function paint(slots) {
@@ -279,9 +279,9 @@
   }
 
   Chart.register({
-    id: "harkTheme",
+    id: "boardTheme",
     beforeInit: function (chart) {
-      chart.$harkSlots = [];
+      chart.$boardSlots = [];
       applyChrome(chart);
       roomForLabels(chart);
     },
@@ -289,7 +289,7 @@
       assignSeries(chart);
       var fresh = tokenSlots(chart.config.options, tokenSlots(chart.config.data.datasets, []));
       paint(fresh);
-      chart.$harkSlots = chart.$harkSlots.concat(fresh);
+      chart.$boardSlots = chart.$boardSlots.concat(fresh);
     },
     afterDataLimits: function (chart, args) { roomAbove(chart, args.scale); },
     beforeDatasetsDraw: function (chart) { drawBaseline(chart); },
@@ -331,7 +331,7 @@
   }
   function drawEndNames(chart) {
     var dl = chart.config.options.plugins && chart.config.options.plugins.datalabels;
-    if (!dl || !dl.harkEnds) return;
+    if (!dl || !dl.boardEnds) return;
     var names = [];
     chart.data.datasets.forEach(function (ds, i) {
       var meta = chart.getDatasetMeta(i), last = lastIndex(ds.data || []);
@@ -403,7 +403,7 @@
   var LABELS = {
     values: function () {
       return {
-        display: dense(everyPoint), offset: 2, harkRoom: true,
+        display: dense(everyPoint), offset: 2, boardRoom: true,
         anchor: function (ctx) { return valueOf(ctx) < 0 ? "start" : "end"; },
         align: function (ctx) {
           var negative = valueOf(ctx) < 0;
@@ -413,9 +413,9 @@
       };
     },
     inside: function () { return { display: always(fits), anchor: "center", align: "center", color: onColour }; },
-    points: function () { return { display: dense(everyPoint), anchor: "center", align: "top", offset: 6, harkRoom: true, harkRight: true }; },
+    points: function () { return { display: dense(everyPoint), anchor: "center", align: "top", offset: 6, boardRoom: true, boardRight: true }; },
     percent: function () { return { display: dense(everyPoint), formatter: percentOfTotal, color: onColour }; },
-    ends: function () { return { display: false, harkEnds: true }; },
+    ends: function () { return { display: false, boardEnds: true }; },
     names: function () {
       return {
         display: always(everyPoint), anchor: "center", align: "right", offset: 4, color: live("var(--chart-ink-2)"),
@@ -430,9 +430,9 @@
   var LAST_VALUE_ROOM_PX = 24;
   function roomForLabels(chart) {
     var opts = chart.config.options, dl = (opts.plugins && opts.plugins.datalabels) || {};
-    chart.$harkRoom = !!dl.harkRoom;
+    chart.$boardRoom = !!dl.boardRoom;
     var names = marginNames(chart, dl);
-    var right = names.reduce(function (w, t) { return Math.max(w, textWidth(t, sansFont()) + 12); }, dl.harkRight ? LAST_VALUE_ROOM_PX : 0);
+    var right = names.reduce(function (w, t) { return Math.max(w, textWidth(t, sansFont()) + 12); }, dl.boardRight ? LAST_VALUE_ROOM_PX : 0);
     var layout = opts.layout = opts.layout || {};
     if (!right || (layout.padding !== undefined && typeof layout.padding !== "object")) return;
     var padding = layout.padding = layout.padding || {};
@@ -442,7 +442,7 @@
     if (!cartesian(chart)) return [];
     return chart.config.data.datasets.map(function (ds, i) {
       if (isReference(ds)) return ds.label || "";
-      if (!dl.harkEnds) return "";
+      if (!dl.boardEnds) return "";
       var last = lastIndex(ds.data || []);
       return String(dl.formatter ? dl.formatter(ds.data[last], { chart: chart, dataset: ds, datasetIndex: i, dataIndex: last }) : ds.label || "");
     }).filter(Boolean);
@@ -469,7 +469,7 @@
     applyDefaults();
     Object.keys(Chart.instances).forEach(function (id) {
       var chart = Chart.instances[id];
-      paint(chart.$harkSlots || []);
+      paint(chart.$boardSlots || []);
       chart.update("none");
     });
   }
@@ -506,9 +506,9 @@
   }
   function readData(id) {
     var el = doc.getElementById(id);
-    if (!el) throw new Error("Hark.data: no element with id " + id);
+    if (!el) throw new Error("Board.data: no element with id " + id);
     return el.type === "text/csv" ? parseCSV(el.textContent.trim()) : JSON.parse(el.textContent);
   }
 
-  window.Hark = Object.assign(window.Hark || {}, { data: readData, color: resolve, wash: wash, labels: labels });
+  window.Board = Object.assign(window.Board || {}, { data: readData, color: resolve, wash: wash, labels: labels });
 })();
