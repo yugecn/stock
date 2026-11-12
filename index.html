@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>汪汪队资金看板</title>
+    <meta name="description" content="用交易所公开份额数据自建的国家队宽基ETF申赎资金看板，每个交易日早上更新（T+1）。仅研究自用，非投资建议。" />
+    <script>document.documentElement.classList.add("js");</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,37 +19,39 @@
       .x-up { color: color-mix(in srgb, var(--fill-system-red) 80%, var(--text-primary)); }
       .x-down { color: color-mix(in srgb, var(--fill-system-green) 72%, var(--text-primary)); }
       .x-n { white-space: nowrap; }
+      .page, .x-heat__tip, .x-heat__read, .x-sum, .x-legend, .x-meta, .x-dates, .stat__fig, table { font-variant-numeric: tabular-nums; }
       /* 今日状态 */
       .x-today { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; }
-      .x-card { display: grid; align-content: start; gap: 12px; padding: 22px 24px; border-radius: var(--r-l); background: var(--fill-tertiary); border: 1px solid var(--stroke-secondary); min-width: 0; }
+      .x-card { display: grid; align-content: start; gap: 12px; padding: 24px; border-radius: var(--r-l); background: var(--fill-tertiary); border: 1px solid var(--stroke-secondary); min-width: 0; }
       .x-eyebrow { font: var(--type-label); color: var(--text-secondary); }
       .x-title { font: var(--type-heading); }
-      .x-big { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+      .x-big { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
       .x-big__fig { font: var(--type-display); font-size: clamp(40px, 7vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
       .x-big__fig small { font-size: 0.4em; margin-left: 4px; color: var(--text-secondary); }
-      .x-status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-pill); font: var(--type-label); font-weight: var(--weight-bold); background: var(--fill-primary-on); border: 1px solid var(--stroke-primary); }
+      .x-status { display: inline-flex; align-items: center; gap: 8px; padding: 4px 16px; border-radius: var(--r-pill); font: var(--type-label); font-weight: var(--weight-bold); background: var(--fill-primary-on); border: 1px solid var(--stroke-primary); }
       .x-status--work { background: color-mix(in srgb, var(--fill-system-red) 14%, var(--fill-primary-on)); border-color: color-mix(in srgb, var(--fill-system-red) 45%, transparent); }
       .x-status--retreat { background: color-mix(in srgb, var(--fill-system-green) 14%, var(--fill-primary-on)); border-color: color-mix(in srgb, var(--fill-system-green) 45%, transparent); }
       .x-sub { font: var(--type-small); color: var(--text-secondary); }
-      .x-minis { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 16px 24px; align-items: end; padding-top: 14px; border-top: 1px solid var(--stroke-primary); }
-      .x-mini { display: grid; gap: 2px; }
+      .x-minis { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 16px; align-items: end; padding-top: 16px; border-top: 1px solid var(--stroke-primary); }
+      .x-mini { display: grid; gap: 4px; }
       .x-mini span { font: var(--type-caption); color: var(--text-secondary); }
       .x-mini b { font: var(--type-heading); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; white-space: nowrap; }
       .x-spark { position: relative; height: 52px; }
       .x-gauge__fig { font: var(--type-display); font-variant-numeric: tabular-nums; line-height: 1.05; }
       .x-meter { position: relative; height: 14px; border-radius: var(--r-pill); background: var(--fill-primary-on); border: 1px solid var(--stroke-primary); overflow: hidden; }
-      .x-meter i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--fill-primary); border-radius: var(--r-pill); transition: width var(--dur-draw) var(--ease-out); }
+      .x-meter i { position: absolute; inset: 0; background: var(--fill-primary); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-draw) var(--ease-out); }
+      @media (prefers-reduced-motion: reduce) { .x-meter i { transition: none; } }
       .x-meter i.is-hot { background: var(--fill-system-red); }
       .x-meter__mark { position: absolute; left: 50%; top: -1px; bottom: -1px; width: 2px; background: var(--fill-system-orange); }
       .x-meter__scale { display: flex; justify-content: space-between; font: var(--type-caption); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-      .x-dates { display: flex; flex-wrap: wrap; gap: 4px 20px; font: var(--type-caption); color: var(--text-secondary); }
+      .x-dates { display: flex; flex-wrap: wrap; gap: 4px 16px; font: var(--type-caption); color: var(--text-secondary); }
       .x-dates b { color: var(--text-primary); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
       .x-arrow { font-size: 0.55em; vertical-align: 0.25em; margin-right: 4px; }
       .x-meta { font: var(--type-caption); color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 4px 16px; }
       .x-meta b { color: var(--text-primary); font-weight: var(--weight-medium); }
       @media (max-width: 760px) {
         .x-today { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-        .x-card { padding: 18px; border-radius: var(--r-m); }
+        .x-card { padding: 16px; border-radius: var(--r-m); }
         .x-minis { grid-template-columns: 1fr 1fr; }
         .x-minis > .x-spark-wrap { grid-column: 1 / -1; }
       }
@@ -61,19 +65,26 @@
       .x-heat__cell.is-latest::after { content: ""; display: block; width: 6px; height: 6px; margin: auto; border-radius: 50%; background: var(--text-primary); }
       .x-heat__cell.is-latest { display: grid; }
       .x-heat__lab { align-self: center; white-space: nowrap; padding-right: 4px; }
-      @media (max-width: 599px) { .x-heat { gap: 3px; } .x-heat__cell { height: 26px; border-radius: 3px; } .x-heat__cell.is-work { box-shadow: 0 0 0 1.5px var(--text-primary); } }
-      .x-heat__tip { position: absolute; z-index: 5; pointer-events: none; padding: 6px 10px; border-radius: var(--r-s); background: var(--fill-primary); color: var(--text-primary-on); font: var(--type-tag); white-space: nowrap; transform: translate(-50%, calc(-100% - 8px)); opacity: 0; transition: opacity var(--dur-quick); }
-      .x-heat__tip.is-on { opacity: 1; }
-      .x-heat__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; margin-top: 14px; font: var(--type-caption); color: var(--text-secondary); }
+      @media (max-width: 599px) { .x-heat__cell { height: 28px; border-radius: 3px; } .x-heat__cell.is-work { box-shadow: 0 0 0 1.5px var(--text-primary); } }
+      .x-heat__tip { position: absolute; z-index: 5; pointer-events: none; padding: 4px 8px; border-radius: var(--r-s); background: var(--fill-primary); color: var(--text-primary-on); font: var(--type-tag); font-variant-numeric: tabular-nums; white-space: nowrap; transform: translate(-50%, calc(-100% - 8px)); transition: opacity var(--dur-quick); }
+      .js .x-heat__tip { opacity: 0; }
+      .js .x-heat__tip.is-on { opacity: 1; }
+      .x-heat__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 16px; font: var(--type-caption); color: var(--text-secondary); }
       .x-heat__read { color: var(--text-primary); font-weight: var(--weight-medium); min-height: 16px; }
-      .x-heat__legend { display: flex; align-items: center; gap: 3px; }
-      .x-heat__legend i { width: 14px; height: 14px; border-radius: 3px; }
+      .x-heat__legend { display: flex; align-items: center; gap: 4px; }
+      .x-heat__legend i { width: 12px; height: 12px; border-radius: 3px; }
       .x-heat__legend span { margin-inline: 4px; }
-      .x-heat__legend i.is-work { box-shadow: 0 0 0 2px var(--text-primary); margin-left: 10px; background: var(--fill-primary-on); }
+      .x-heat__legend i.is-work { box-shadow: 0 0 0 2px var(--text-primary); margin-left: 8px; background: var(--fill-primary-on); }
+      /* 趋势小多图 */
+      .x-sm-lab { margin: 0 0 4px; font: var(--type-caption); color: var(--text-secondary); }
+      .x-sm-lab + .chart__canvas + .x-sm-lab { margin-top: 12px; }
+      .chart__canvas.x-sm-a { height: 260px; }
+      .chart__canvas.x-sm-b { height: 140px; }
+      @media (max-width: 599px) { .chart__canvas.x-sm-a { height: 200px; } .chart__canvas.x-sm-b { height: 112px; } }
       /* 单只ETF */
       .x-scroll.x-se tr.x-top-in > * { background-color: color-mix(in srgb, var(--fill-system-red) 9%, var(--fill-primary-on)); }
       .x-scroll.x-se tr.x-top-out > * { background-color: color-mix(in srgb, var(--fill-system-green) 10%, var(--fill-primary-on)); }
-      .x-tag { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: var(--r-pill); font: var(--type-caption); font-weight: var(--weight-medium); white-space: nowrap; vertical-align: 1px; border: 1px solid currentColor; }
+      .x-tag { display: inline-block; margin-left: 4px; padding: 0 8px; border-radius: var(--r-pill); font: var(--type-caption); font-weight: var(--weight-medium); white-space: nowrap; vertical-align: 1px; border: 1px solid currentColor; }
       .x-scroll.x-se td.x-flowc b { font-weight: var(--weight-bold); }
       @media (max-width: 599px) {
         .x-scroll.x-se { margin-inline: 0; padding-inline: 0; overflow: visible; }
@@ -91,11 +102,11 @@
         .x-scroll.x-se tbody tr.x-top-in > *, .x-scroll.x-se tbody tr.x-top-out > * { background: transparent; }
         /* 第1行：名称 + 申赎净流入 */
         .x-scroll.x-se tbody th { grid-column: 1 / 4; grid-row: 1; white-space: normal; font: var(--type-label); font-weight: var(--weight-medium); line-height: 1.35; overflow-wrap: anywhere; }
-        .x-scroll.x-se tbody th small { display: block; margin-top: 2px; font: var(--type-caption); line-height: 1.4; color: var(--text-secondary); }
+        .x-scroll.x-se tbody th small { display: block; margin-top: 4px; font: var(--type-caption); line-height: 1.4; color: var(--text-secondary); }
         .x-scroll.x-se .x-tag--d { display: none; }
-        .x-scroll.x-se .x-tag--m { display: inline-block; margin-left: 6px; padding: 0 6px; font-size: var(--size-caption); line-height: 1.4; vertical-align: 0; }
+        .x-scroll.x-se .x-tag--m { display: inline-block; margin-left: 4px; padding: 0 4px; font-size: var(--size-caption); line-height: 1.4; vertical-align: 0; }
         .x-scroll.x-se tbody td.x-flowc { grid-column: 4 / 6; grid-row: 1; justify-self: end; text-align: right; font: var(--type-heading); line-height: 1.2; }
-        .x-scroll.x-se tbody td.x-flowc::after { content: "申赎净流入(亿)"; display: block; margin-top: 2px; font: var(--type-caption); line-height: 1.35; color: var(--text-secondary); white-space: nowrap; }
+        .x-scroll.x-se tbody td.x-flowc::after { content: "申赎净流入(亿)"; display: block; margin-top: 4px; font: var(--type-caption); line-height: 1.35; color: var(--text-secondary); white-space: nowrap; }
         .x-scroll.x-se td.x-flowc .x-div__track { display: none; }
         .x-scroll.x-se td.x-flowc .x-div { justify-content: flex-end; }
         .x-scroll.x-se td.x-flowc .x-div b { min-width: 0; font-variant-numeric: tabular-nums; }
@@ -105,12 +116,12 @@
           font: var(--type-caption); line-height: 1.4; font-weight: var(--weight-medium); color: var(--text-primary);
           font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .x-scroll.x-se tbody td:not(.x-flowc)[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-weight: var(--weight-regular); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
+        .x-scroll.x-se tbody td:not(.x-flowc)[data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; font-weight: var(--weight-regular); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; }
         .x-scroll.x-se td .x-amt { display: block; min-width: 0; padding: 0; font-weight: var(--weight-bold); overflow: hidden; text-overflow: ellipsis; }
         .x-scroll.x-se td .x-amt i { display: none; }
         .x-scroll.x-se tbody td.x-pct { background: transparent; border-radius: 0; }
-        .x-scroll.x-se td.x-pct .x-pv { display: inline-block; max-width: 100%; padding: 0 2px; margin-left: 0; border-radius: 3px; letter-spacing: -0.03em; background: var(--pbg, transparent); overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
-        .x-scroll.x-se td .x-badge { width: 6px; height: 6px; margin-left: 3px; padding: 0; border-radius: 50%; font-size: 0; vertical-align: 1px; border-color: var(--text-primary); }
+        .x-scroll.x-se td.x-pct .x-pv { display: inline-block; max-width: 100%; padding: 0 4px; margin-left: 0; border-radius: 3px; letter-spacing: -0.03em; background: var(--pbg, transparent); overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+        .x-scroll.x-se td .x-badge { width: 6px; height: 6px; margin-left: 4px; padding: 0; border-radius: 50%; font-size: 0; vertical-align: 1px; border-color: var(--text-primary); }
         .x-scroll.x-se td .x-badge--strong { background: var(--fill-primary); }
         /* 显式列位，杜绝隐式列 */
         .x-scroll.x-se tbody tr { grid-auto-columns: 0; }
@@ -121,7 +132,7 @@
         .x-scroll.x-se tbody td:nth-of-type(5) { grid-column: 4; }
         .x-scroll.x-se tbody td:nth-of-type(6) { grid-column: 5; }
         /* caption */
-        .x-scroll.x-se caption { display: block; width: auto; text-align: left; padding: 0 0 10px; }
+        .x-scroll.x-se caption { display: block; width: auto; text-align: left; padding: 0 0 8px; }
         .x-scroll.x-se caption .x-cap-d { display: none; }
         .x-scroll.x-se caption .x-cap-m { display: inline; }
       }
@@ -132,17 +143,17 @@
       }
       .x-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
       .x-tog {
-        display: inline-flex; align-items: center; min-height: 30px; padding: 5px 12px;
+        display: inline-flex; align-items: center; min-height: 32px; padding: 4px 12px;
         border-radius: var(--r-pill); border: 1px solid var(--stroke-primary);
         background: var(--fill-primary-on); color: var(--text-primary); font: var(--type-tag); cursor: pointer;
       }
       .x-tog:hover { box-shadow: inset 0 0 0 100px var(--hover-wash); }
       .x-tog[aria-pressed="true"] { background: var(--fill-primary); color: var(--text-primary-on); border-color: var(--fill-primary); }
       .x-btn { cursor: pointer; }
-      .x-btn[disabled] { opacity: 0.6; cursor: default; }
+      .x-btn[disabled] { background: var(--fill-tertiary); color: var(--text-secondary); border-color: var(--stroke-secondary); box-shadow: none; cursor: not-allowed; }
       .x-sort { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
       .x-sort:hover { color: var(--text-primary); }
-      .x-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font: var(--type-caption); color: var(--text-secondary); }
+      .x-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font: var(--type-caption); color: var(--text-secondary); }
       .x-msort { display: none; align-items: center; gap: 8px; font: var(--type-caption); color: var(--text-secondary); }
       .x-msort select {
         min-height: var(--tap); padding: 0 12px; border-radius: var(--r-s); border: 1px solid var(--stroke-primary);
@@ -160,21 +171,21 @@
       .x-amt i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: color-mix(in srgb, var(--text-primary) 13%, transparent); }
       .x-amt span { position: relative; }
       .x-scroll td.x-pct { white-space: nowrap; font-weight: var(--weight-medium); color: var(--text-primary); text-align: right; }
-      .x-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: var(--r-pill); font: var(--type-caption); border: 1px solid var(--stroke-primary); color: var(--text-primary); white-space: nowrap; }
+      .x-badge { display: inline-block; margin-left: 4px; padding: 0 8px; border-radius: var(--r-pill); font: var(--type-caption); border: 1px solid var(--stroke-primary); color: var(--text-primary); white-space: nowrap; }
       .x-badge--strong { background: var(--fill-primary); border-color: var(--fill-primary); color: var(--text-primary-on); font-weight: var(--weight-bold); }
       .x-dim { color: var(--text-secondary); }
-      .x-div { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+      .x-div { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
       .x-div__track { position: relative; flex: 0 0 120px; height: 12px; }
-      .x-div__track::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--stroke-primary); }
+      .x-div__track::before { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--stroke-primary); }
       .x-div__track i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
       .x-div__track i.pos { left: 50%; background: var(--fill-system-red); }
       .x-div__track i.neg { right: 50%; background: var(--fill-system-green); }
       .x-div b { min-width: 48px; text-align: right; font-weight: var(--weight-bold); }
-      @media (pointer: coarse), (max-width: 599px) { .x-tog { min-height: var(--tap); padding-inline: 14px; } }
+      @media (pointer: coarse), (max-width: 599px) { .x-tog { min-height: var(--tap); padding-inline: 16px; } }
       @media (max-width: 599px) { .x-msort { display: flex; } }
       /* 手机端整页校对 */
       @media (max-width: 599px) {
-        .x-card { gap: 10px; padding: 16px; }
+        .x-card { gap: 12px; padding: 16px; }
         .x-eyebrow, .x-sub, .x-dates, .x-meta, .x-legend, .x-meter__scale, .x-mini span { line-height: 1.4; }
         .x-title { line-height: 1.3; overflow-wrap: anywhere; }
         .x-big__fig { font-size: 40px; }
@@ -183,11 +194,10 @@
         .x-mini { gap: 4px; min-width: 0; }
         .x-mini b { line-height: 1.25; font-size: var(--size-heading); }
         .x-gauge__fig { font-size: 40px; line-height: 1.1; }
-        .x-dates, .x-meta { gap: 6px 14px; }
-        .x-heat { gap: 2px; }
-        .x-heat__lab { font-size: var(--size-caption); line-height: 1.35; padding-right: 2px; }
-        .x-heat__foot { flex-direction: column; gap: 10px; line-height: 1.4; }
-        .x-heat__legend { flex-wrap: wrap; row-gap: 6px; }
+        .x-dates, .x-meta { gap: 8px 16px; }
+        .x-heat__lab { font-size: var(--size-caption); line-height: 1.35; padding-right: 4px; }
+        .x-heat__foot { flex-direction: column; gap: 12px; line-height: 1.4; }
+        .x-heat__legend { flex-wrap: wrap; row-gap: 8px; }
         .chart__cap { line-height: 1.4; }
         .chart__cap small { margin-top: 4px; line-height: 1.4; }
         .chart__canvas.x-catbar { height: 300px; }
@@ -205,25 +215,25 @@
               <p class="x-eyebrow">汪汪队资金看板 · 20只宽基ETF申赎</p>
               <h1 class="x-title" id="td-title">汪汪队资金看板</h1>
               <div class="x-big">
-                <span class="x-big__fig" id="td-nf1">—</span>
-                <span class="x-status" id="td-badge">—</span>
+                <span class="x-big__fig" id="td-nf1">…</span>
+                <span class="x-status" id="td-badge">…</span>
               </div>
-              <p class="x-sub">最新申赎日净流入（亿元）· 份额变动 × 收盘价 · <span id="td-sub"></span></p>
+              <p class="x-sub">最新申赎日净流入（亿元），份额变动 × 收盘价<br /><span id="td-sub"></span></p>
               <div class="x-minis">
-                <div class="x-mini"><span>近5日（亿元）</span><b id="td-nf5">—</b></div>
-                <div class="x-mini"><span>近20日（亿元）</span><b id="td-nf20">—</b></div>
+                <div class="x-mini"><span>近5日（亿元）</span><b id="td-nf5">…</b></div>
+                <div class="x-mini"><span>近20日（亿元）</span><b id="td-nf20">…</b></div>
                 <div class="x-mini x-spark-wrap"><span>近20日每日净流入（亿元）· 红入绿出</span><div class="x-spark"><canvas id="td-spark" role="img" aria-label="近20个交易日每日净流入迷你柱图"></canvas></div></div>
               </div>
             </div>
             <div class="x-card">
               <p class="x-eyebrow">今日成交额 ÷ 20日均额</p>
-              <p class="x-gauge__fig" id="td-ratio">—</p>
+              <p class="x-gauge__fig" id="td-ratio">…</p>
               <div class="x-meter" role="meter" aria-label="今日预估成交额相对20日均额的倍数" aria-valuemin="0" aria-valuemax="2" id="td-meter-box"><i id="td-meter"></i><span class="x-meter__mark"></span></div>
               <div class="x-meter__scale"><span>0×</span><span>1× 均值</span><span>2×+</span></div>
               <p class="x-sub" id="td-ratio-l">按盘中行情推算全日成交额</p>
             </div>
           </div>
-          <p class="x-dates"><span>申赎截至 <b id="td-asof">—</b>（T+1公布）</span><span>行情截至 <b id="td-qt">—</b></span><span><b class="x-up">红</b>=流入/上涨 · <b class="x-down">绿</b>=流出/下跌</span></p>
+          <p class="x-dates"><span>申赎截至 <b id="td-asof">…</b>（T+1公布）</span><span>行情截至 <b id="td-qt">…</b></span><span><b class="x-up">红</b>=流入/上涨 · <b class="x-down">绿</b>=流出/下跌</span></p>
           <section class="stats">
             <div class="stat"><span class="stat__fig" id="st-nf5"></span><span class="stat__label">近5日 · 亿元</span></div>
             <div class="stat"><span class="stat__fig" id="st-nf20"></span><span class="stat__label">近20日 · 亿元</span></div>
@@ -240,16 +250,16 @@
             <p class="head__sub">成交额不是净流入：真实净申购要等交易所次日早上公布份额。</p>
           </div>
           <section class="stats">
-            <div class="stat"><span class="stat__fig" id="lv-amt">—</span><span class="stat__label">盘中累计成交额 · 20只合计</span></div>
-            <div class="stat"><span class="stat__fig" id="lv-est">—</span><span class="stat__label">预估全日 · <span id="lv-est-l">按日内曲线推算</span></span></div>
-            <div class="stat"><span class="stat__fig" id="lv-avg">—</span><span class="stat__label">20日均成交额 · 估算</span></div>
-            <div class="stat"><span class="stat__fig" id="lv-time">—</span><span class="stat__label">最后更新 · 北京时间</span></div>
+            <div class="stat"><span class="stat__fig" id="lv-amt">…</span><span class="stat__label">盘中累计成交额 · 20只合计</span></div>
+            <div class="stat"><span class="stat__fig" id="lv-est">…</span><span class="stat__label">预估全日 · <span id="lv-est-l">按日内曲线推算</span></span></div>
+            <div class="stat"><span class="stat__fig" id="lv-avg">…</span><span class="stat__label">20日均成交额 · 估算</span></div>
+            <div class="stat"><span class="stat__fig" id="lv-time">…</span><span class="stat__label">最后更新 · 北京时间</span></div>
           </section>
           <div class="x-bar">
             <button class="btn x-btn" type="button" id="lv-refresh">立即刷新</button>
             <span class="chip" id="lv-status">加载中…</span>
           </div>
-          <p class="fineprint">交易时段（北京时间 9:30–11:30、13:00–15:00，周一至周五）每60秒自动刷新。预估全日 = 当前成交额 ÷ 篮子平均日内成交曲线在当前时点的占比（15:00 后为 1）。20日均成交额取最近20个完整交易日的估算值。各只价格与成交额见下方「单只」。</p>
+          <p class="fineprint">交易时段（北京时间 9:30 至 11:30、13:00 至 15:00，周一至周五）每60秒自动刷新。预估全日 = 当前成交额 ÷ 篮子平均日内成交曲线在当前时点的占比（15:00 后为 1）。20日均成交额取最近20个完整交易日的估算值。各只价格与成交额见下方「单只」。</p>
         </section>
 
         <section class="section" id="single" data-nav="单只">
@@ -260,7 +270,7 @@
           </div>
           <div class="x-bar">
             <span class="chip" id="se-status">快照：2026-11-11 收盘（估算）</span>
-            <span class="x-legend" id="se-sum">—</span>
+            <span class="x-legend" id="se-sum">…</span>
           </div>
           <label class="x-msort">排序<select id="se-msort"></select></label>
           <div class="x-scroll x-se">
@@ -280,7 +290,7 @@
               <tbody></tbody>
             </table>
           </div>
-          <p class="fineprint">成交额/涨跌幅/价格为腾讯行情；近20日均额为日K估算(量×OHLC均价)；申赎净流入用交易所份额，T日份额于T+1早上公布，当前为 2026-11-11。</p>
+          <p class="fineprint">成交额、涨跌幅和价格来自腾讯行情；近20日均额按日线估算（成交量 × 开高低收均价）；申赎净流入用交易所份额，当日份额于次一交易日早上公布，当前为 2026-11-11。</p>
         </section>
 
         <section class="section" id="trend" data-nav="趋势">
@@ -290,7 +300,7 @@
             <p class="head__sub" id="fl-sub"></p>
           </div>
           <figure class="chart">
-            <figcaption class="chart__cap">近60个交易日净流入热力日历<small>单位亿元 · 每格一个交易日，红=流入、绿=流出，越深金额越大 · 描边=单日≥100亿（上班）· 圆点=最新一天</small></figcaption>
+            <figcaption class="chart__cap">近60个交易日净流入热力日历<small>单位亿元，每格一个交易日<br />红=流入、绿=流出，越深金额越大<br />描边=单日≥100亿（上班），圆点=最新一天</small></figcaption>
             <div class="x-heat" id="heat"></div>
             <div class="x-heat__foot">
               <p class="x-heat__read" id="heat-read" aria-live="polite">悬停或点按格子查看日期和数值</p>
@@ -304,7 +314,10 @@
           </div>
           <figure class="chart">
             <figcaption class="chart__cap" id="fl-cap">每日净流入与成交额估算<small></small></figcaption>
-            <div class="chart__canvas chart__canvas--tall"><canvas id="flow-chart" role="img" aria-label="每日净流入柱图，红为流入绿为流出，成交额估算为折线，虚线为100亿上班线"></canvas></div>
+            <p class="x-sm-lab">每日净流入（亿）</p>
+            <div class="chart__canvas x-sm-a"><canvas id="flow-chart" role="img" aria-label="每日净流入柱图，红为流入绿为流出，虚线为100亿上班线"></canvas></div>
+            <p class="x-sm-lab">成交额估算（亿）</p>
+            <div class="chart__canvas x-sm-b"><canvas id="amt-chart" role="img" aria-label="同一时段每日成交额估算折线图"></canvas></div>
           </figure>
         </section>
 
@@ -431,7 +444,7 @@
         </section>
       </main>
       <footer class="foot">
-        <p><span id="ft-text">汪汪队资金看板</span> · 仅研究自用，非投资建议</p>
+        <p><span id="ft-text">汪汪队资金看板</span><br />仅研究自用，非投资建议</p>
         <nav aria-label="回到各部分" data-auto></nav>
       </footer>
     </div>
@@ -447,8 +460,8 @@ const D = Hark.data("dash");
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const NF = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ok = (v) => v != null && !isNaN(v);
-  const fmt = (v) => (ok(v) ? NF.format(v) : "—");
-  const sgn = (v) => (ok(v) ? (v > 0 ? "+" : "") + NF.format(v) : "—");
+  const fmt = (v) => (ok(v) ? NF.format(v) : "暂无");
+  const sgn = (v) => (ok(v) ? (v > 0 ? "+" : "") + NF.format(v) : "暂无");
   const cls = (v) => (v > 0 ? "x-up" : v < 0 ? "x-down" : "");
   const money = (v) => `<span class="${cls(v)}">${sgn(v)}</span>`;
   const sum = (arr, f) => arr.reduce((a, x) => a + (f(x) || 0), 0);
@@ -471,7 +484,7 @@ const D = Hark.data("dash");
   nf1El.className = "x-big__fig " + cls(S.nf1);
   const bEl = $("#td-badge");
   bEl.textContent = badge; bEl.className = "x-status " + bcls;
-  bEl.title = "单日净流入 ≥100亿 上班 · 0~100亿 摸鱼 · <0 撤退";
+  bEl.title = "单日净流入 ≥100亿 上班，0~100亿 摸鱼，<0 撤退";
   [["#td-nf5", S.nf5], ["#td-nf20", S.nf20]].forEach(([id, v]) => { const el = $(id); el.textContent = sgn(v); el.className = cls(v); });
   $("#td-asof").textContent = D.as_of;
   document.title = `${title} · 汪汪队资金看板`;
@@ -509,14 +522,14 @@ const D = Hark.data("dash");
     $("#lv-time").textContent = stamp;
     $("#td-ratio").textContent = ratio.toFixed(2) + "×";
     const m = $("#td-meter");
-    m.style.width = Math.min(100, (ratio / 2) * 100).toFixed(1) + "%";
+    m.style.transform = "scaleX(" + Math.max(0, Math.min(1, ratio / 2)).toFixed(3) + ")";
     m.classList.toggle("is-hot", ratio >= 1.5);
     $("#td-meter-box").setAttribute("aria-valuenow", Math.min(2, ratio).toFixed(2));
     $("#td-ratio-l").textContent = `${fac < 1 ? "预估全日" : "全日"} ${fmt(est)}亿 vs 20日均 ${fmt(avg20)}亿 · ${ratio >= 1.5 ? "明显放量" : ratio >= 1 ? "高于均值" : "低于均值"}`;
   }
   function setStatus(text, solid) { const c = $("#lv-status"); c.textContent = text; c.classList.toggle("chip--solid", !!solid); }
   const snapStamp = snap.generated_at.slice(5, 19);
-  function setFoot(quoteStamp) { $("#ft-text").textContent = `申赎数据截至 ${D.as_of} · 行情截至 ${quoteStamp}`; $("#td-qt").textContent = quoteStamp; }
+  function setFoot(quoteStamp) { $("#ft-text").textContent = `申赎数据截至 ${D.as_of}，行情截至 ${quoteStamp}`; $("#td-qt").textContent = quoteStamp; }
   function useSnapshot() {
     const rows = snap.items.map((it) => ({ code: it.code, name: nameOf[it.code] || it.code, price: it.price, pct: it.pct, amt: it.amount_yi }));
     renderLive(rows, snap.amount_yi, snap.generated_at.slice(11, 16), snapStamp);
@@ -579,7 +592,7 @@ const D = Hark.data("dash");
     pos.forEach((p) => { const m = p.d.d.slice(5, 7); if (m !== lastM) { lastM = m; html += `<span class="x-heat__lab" style="grid-row:1;grid-column:${p.col + 2}">${+m}月</span>`; } });
     const last = h60[h60.length - 1].d;
     pos.forEach((p, i) => {
-      const v = p.d.nf, txt = `${p.d.d} · 净流入 ${sgn(v)}亿${v >= 100 ? " · 上班" : ""}`;
+      const v = p.d.nf, txt = `${p.d.d}，净流入 ${sgn(v)}亿${v >= 100 ? "，上班" : ""}`;
       html += `<span role="img" class="x-heat__cell${v >= 100 ? " is-work" : ""}${p.d.d === last ? " is-latest" : ""}" style="grid-row:${p.row + 2};grid-column:${p.col + 2};background:${shade(v)}" data-i="${i}" aria-label="${txt}"></span>`;
     });
     html += `<div class="x-heat__tip" id="heat-tip"></div>`;
@@ -587,7 +600,7 @@ const D = Hark.data("dash");
     const tip = $("#heat-tip"), read = $("#heat-read");
     const show = (el) => {
       const p = pos[+el.dataset.i], v = p.d.nf;
-      const txt = `${p.d.d} · ${sgn(v)}亿${v >= 100 ? " · 上班" : ""}`;
+      const txt = `${p.d.d}：${sgn(v)}亿${v >= 100 ? "（上班）" : ""}`;
       tip.textContent = txt;
       read.innerHTML = `${p.d.d}（周${"一二三四五"[p.row]}）净流入 <span class="${cls(v)}">${sgn(v)}亿</span> · 成交额估算 ${fmt(p.d.amt)}亿`;
       const br = box.getBoundingClientRect(), r = el.getBoundingClientRect();
@@ -625,34 +638,57 @@ const D = Hark.data("dash");
   function flowSlice(n) { const s = days.slice(-n); return { labels: s.map((d) => d.d.slice(2)), nf: s.map((d) => d.nf), amt: s.map((d) => d.amt), s }; }
   function flowText(n, f) {
     const work = f.s.filter((d) => d.nf >= 100).length, tot = sum(f.s, (d) => d.nf);
-    $("#fl-cap").innerHTML = `近${n}个交易日净流入与成交额估算<small>${f.s[0].d} → ${f.s[f.s.length - 1].d} · 亿元 · 柱为净流入（左轴），线为成交额估算（右轴）</small>`;
+    $("#fl-cap").innerHTML = `近${n}个交易日净流入与成交额估算<small>${f.s[0].d} → ${f.s[f.s.length - 1].d}，单位亿元<br />上图红=流入、绿=流出，虚线为100亿上班线</small>`;
     $("#fl-sub").textContent = `近${n}日合计 ${sgn(tot)}亿，其中 ${work} 天上班（≥100亿）。`;
   }
   let fs = flowSlice(60);
   const yFmt = (v) => NF.format(v).replace(/\.00$/, "") + "亿";
+  const yNum = (v) => NF.format(v).replace(/\.00$/, "");
+  const GRID = { lineWidth: 1 };
+  /* 两张小图左轴等宽，竖向对齐 */
+  const Y_W = 56;
+  const smY = (extra) => Object.assign({ position: "left", grid: GRID, ticks: { maxTicksLimit: 5, callback: yNum }, afterFit: (s) => { s.width = Y_W; } }, extra || {});
+  const smTitle = (it) => "20" + it[0].label;
   const flowChart = new Chart($("#flow-chart"), {
     type: "bar",
     data: {
       labels: fs.labels,
       datasets: [
-        { type: "bar", label: "净流入", data: fs.nf, yAxisID: "y", order: 2, backgroundColor: (ctx) => (ctx.raw == null || ctx.raw >= 0 ? RED : GREEN) },
-        { type: "line", label: "成交额估算", data: fs.amt, yAxisID: "y1", order: 1, borderColor: "var(--chart-ink-2)", pointRadius: 0 },
-        { type: "line", label: "上班线", data: fs.labels.map(() => 100), yAxisID: "y", borderColor: "var(--chart-reference)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
+        { type: "bar", label: "净流入", data: fs.nf, order: 2, backgroundColor: (ctx) => (ctx.raw == null || ctx.raw >= 0 ? RED : GREEN) },
+        { type: "line", label: "", data: fs.labels.map(() => 100), borderColor: "var(--chart-reference)", borderDash: [3, 4], borderWidth: 1, pointRadius: 0 },
       ],
     },
     options: {
+      maintainAspectRatio: false,
+      layout: { padding: { right: 4 } },
+      interaction: { mode: "index", intersect: false },
+      scales: {
+        x: { ticks: { display: false } },
+        y: smY(),
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          filter: (it) => it.datasetIndex === 0,
+          callbacks: { title: smTitle, label: (ctx) => `净流入 ${sgn(ctx.raw)}亿` },
+        },
+      },
+    },
+  });
+  const amtChart = new Chart($("#amt-chart"), {
+    type: "line",
+    data: { labels: fs.labels, datasets: [{ label: "成交额估算", data: fs.amt, fill: true, borderColor: "var(--chart-ink-2)", pointRadius: 0 }] },
+    options: {
+      maintainAspectRatio: false,
       layout: { padding: { right: 4 } },
       interaction: { mode: "index", intersect: false },
       scales: {
         x: { ticks: { maxRotation: 0, autoSkipPadding: 16 } },
-        y: { position: "left", ticks: { callback: yFmt } },
-        y1: { position: "right", beginAtZero: true, grid: { display: false }, ticks: { maxTicksLimit: 5, callback: (v) => (window.matchMedia("(max-width: 599px)").matches ? (Math.abs(v) >= 1000 ? +(v / 1000).toFixed(1) + "k" : String(v)) : yFmt(v)) } },
+        y: smY({ beginAtZero: true, ticks: { maxTicksLimit: 3, callback: yNum } }),
       },
       plugins: {
-        tooltip: {
-          filter: (it) => it.datasetIndex !== 2,
-          callbacks: { title: (it) => "20" + it[0].label, label: (ctx) => `${ctx.dataset.label} ${ctx.datasetIndex === 0 ? sgn(ctx.raw) : fmt(ctx.raw)}亿` },
-        },
+        legend: { display: false },
+        tooltip: { callbacks: { title: smTitle, label: (ctx) => `成交额估算 ${fmt(ctx.raw)}亿` } },
       },
     },
   });
@@ -663,9 +699,11 @@ const D = Hark.data("dash");
     fs = flowSlice(n);
     flowChart.data.labels = fs.labels;
     flowChart.data.datasets[0].data = fs.nf;
-    flowChart.data.datasets[1].data = fs.amt;
-    flowChart.data.datasets[2].data = fs.labels.map(() => 100);
+    flowChart.data.datasets[1].data = fs.labels.map(() => 100);
     flowChart.update();
+    amtChart.data.labels = fs.labels;
+    amtChart.data.datasets[0].data = fs.amt;
+    amtChart.update();
     flowText(n, fs);
   }));
 
@@ -693,7 +731,7 @@ const D = Hark.data("dash");
     data: { labels: cd.map((d) => d.d), datasets: [{ label: "累计净流入", data: cd.map((d) => d.cum), fill: true, pointRadius: cd.map((d, i) => (evAt[i] ? 4 : 0)) }] },
     options: {
       layout: { padding: { top: 32, right: 12, bottom: 4 } },
-      scales: { x: { ticks: { maxRotation: 0, autoSkipPadding: 24, callback: function (v) { return this.getLabelForValue(v).slice(0, 7); } } }, y: { ticks: { callback: yFmt } } },
+      scales: { x: { ticks: { maxRotation: 0, autoSkipPadding: 24, callback: function (v) { return this.getLabelForValue(v).slice(0, 7); } } }, y: { grid: GRID, ticks: { maxTicksLimit: 5, callback: yFmt } } },
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: (ctx) => `累计 ${sgn(ctx.raw)}亿 · 当日 ${sgn(cd[ctx.dataIndex].nf)}亿` } },
@@ -714,7 +752,7 @@ const D = Hark.data("dash");
   let cmLastNarrow = cmNarrow();
   window.addEventListener("resize", () => { const n = cmNarrow(); if (n !== cmLastNarrow) { cmLastNarrow = n; cmRefresh(); } });
   const cmin = cd.reduce((a, d) => (d.cum < a.cum ? d : a), cd[0]), cmax = cd.reduce((a, d) => (d.cum > a.cum ? d : a), cd[0]);
-  $("#cm-cap").textContent = `${D.cum_start} → ${D.as_of} · 亿元 · 最高 ${sgn(cmax.cum)}（${cmax.d}），最低 ${sgn(cmin.cum)}（${cmin.d}）`;
+  $("#cm-cap").innerHTML = `${D.cum_start} → ${D.as_of}，单位亿元<br />最高 ${sgn(cmax.cum)}（${cmax.d}），最低 ${sgn(cmin.cum)}（${cmin.d}）`;
   $("#cm-sub").textContent = `累计至今 ${sgn(S.cum)}亿；2026年内 ${sgn(S.ytd)}亿。`;
   $("#cm-events").innerHTML = events.map((e) => { const x = byDay(e.d); return `<li><p class="timeline__when">${e.when || e.d}</p><div class="timeline__what"><b>${e.no} ${e.tag}</b> · ${e.text(x)} 之后累计 ${sgn(x.cum)}亿。</div></li>`; }).join("");
 
@@ -738,7 +776,7 @@ const D = Hark.data("dash");
     data: { labels: cb.map((x) => x.c), datasets: [{ label: "净流入", data: cb.map((x) => x.v), backgroundColor: (ctx) => (ctx.raw >= 0 ? RED : GREEN) }] },
     options: {
       indexAxis: "y",
-      scales: { x: { ticks: { callback: yFmt } } },
+      scales: { x: { grid: GRID, ticks: { maxTicksLimit: 5, callback: yFmt } } },
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: (ctx) => `净流入 ${sgn(ctx.raw)}亿` } },
@@ -762,7 +800,7 @@ const D = Hark.data("dash");
     data: { labels: last20.map((d) => d.d.slice(5)), datasets: D.cats.map((c, i) => ({ label: c, data: last20.map((d) => d.cat[c] || 0), backgroundColor: catColor(i) })) },
     options: {
       interaction: { mode: "index", intersect: false },
-      scales: { x: { stacked: true, ticks: { maxRotation: 0, autoSkipPadding: 12 } }, y: { stacked: true, ticks: { callback: yFmt } } },
+      scales: { x: { stacked: true, ticks: { maxRotation: 0, autoSkipPadding: 12 } }, y: { stacked: true, grid: GRID, ticks: { maxTicksLimit: 5, callback: yFmt } } },
       plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label} ${sgn(ctx.raw)}亿` } } },
     },
   });
@@ -812,7 +850,7 @@ const D = Hark.data("dash");
 
   /* 10. Notes */
   const xc = [["2026-11-03", "746.3"], ["2026-11-04", "439.55"], ["2026-11-05", "65.06"]];
-  $("#nt-xcheck").textContent = xc.map(([d, v]) => `${d.slice(5)} ${byDay(d) ? fmt(byDay(d).nf) : "—"} vs ${v}`).join("，");
+  $("#nt-xcheck").textContent = xc.map(([d, v]) => `${d.slice(5)} ${byDay(d) ? fmt(byDay(d).nf) : "暂无"} vs ${v}`).join("，");
   $("#nt-asof").textContent = D.as_of;
   $("#sp-table tbody").innerHTML = D.splits.map((s) => {
     const kind = s.k < 1 ? `${Math.round(1 / s.k)}:1 合并` : `1:${Math.round(s.k)} 拆分`;
@@ -827,8 +865,8 @@ const S = {"quote_ts":"20261112150000","quote":{"510310":{"price":3.998,"prev":4
   const $ = (s, r) => (r || document).querySelector(s);
   const NF = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ok = (v) => v != null && !isNaN(v);
-  const fmt = (v) => (ok(v) ? NF.format(v) : "—");
-  const sgn = (v) => (ok(v) ? (v > 0 ? "+" : "") + NF.format(v) : "—");
+  const fmt = (v) => (ok(v) ? NF.format(v) : "暂无");
+  const sgn = (v) => (ok(v) ? (v > 0 ? "+" : "") + NF.format(v) : "暂无");
   const funds = (D && D.funds) || [];
   const meta = Object.fromEntries(funds.map((f) => [f.code, f]));
   const codes = funds.length ? funds.map((f) => f.code) : Object.keys(S.quote);
@@ -853,7 +891,7 @@ const S = {"quote_ts":"20261112150000","quote":{"510310":{"price":3.998,"prev":4
     rows.forEach((r) => (r.share = total && ok(r.amt) ? (r.amt / total) * 100 : NaN));
     const up = rows.filter((r) => r.pct > 0).length, down = rows.filter((r) => r.pct < 0).length;
     const vol = rows.filter((r) => r.ratio >= 1.5).length;
-    $("#se-sum").textContent = `合计成交额 ${fmt(total)}亿 · 上涨 ${up} 只 / 下跌 ${down} 只 · 放量(≥1.5×) ${vol} 只 · 行情时点 ${quoteHM}`;
+    $("#se-sum").innerHTML = `<span>合计成交额 ${fmt(total)}亿</span><span>上涨 ${up} 只 / 下跌 ${down} 只</span><span>放量(≥1.5×) ${vol} 只</span><span>行情时点 ${quoteHM}</span>`;
     render();
   }
   const td = (label, html, c) => `<td data-label="${label}"${c ? ` class="${c}"` : ""}>${html}</td>`;
@@ -877,7 +915,7 @@ const S = {"quote_ts":"20261112150000","quote":{"510310":{"price":3.998,"prev":4
         const a = Math.round(10 + 32 * (Math.abs(r.pct) / maxPct));
         pctBg = ` style="--pbg: color-mix(in srgb, var(${r.pct > 0 ? "--fill-system-red" : "--fill-system-green"}) ${a}%, transparent)"`;
       }
-      let ratio = "—";
+      let ratio = "暂无";
       if (ok(r.ratio)) {
         const t = r.ratio.toFixed(2) + "×";
         ratio = r.ratio >= 2 ? `<b>${t}</b><span class="x-badge x-badge--strong">2倍放量</span>` : r.ratio >= 1.5 ? `${t}<span class="x-badge">放量</span>` : r.ratio <= 0.75 ? `<span class="x-dim">${t}</span>` : t;
