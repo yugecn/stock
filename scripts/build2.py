@@ -14,6 +14,7 @@ NAME = {c: n for c, n, _ in F}; CAT = {c: k for c, _, k in F}
 CATS = ['沪深300', '中证500', '中证1000', 'A500', '科创50', '创业板', '上证50', '上证指数']
 
 def sh(c, d): return SZ[c].get(d) if c[0] == '1' else SH.get(d, {}).get(c)
+while len(dates)>1 and any(sh(c, dates[-1]) is None for c in NAME if sh(c, dates[-2]) is not None): dates.pop()  # 申赎未公布的尾部日期不计
 
 KS = [2, 3, 4, 5, 10, 0.5, 1/3, 0.25, 0.2, 0.1]
 def split_check(c, i):
