@@ -13,7 +13,7 @@ os.makedirs('k',exist_ok=True); os.makedirs('sse',exist_ok=True)
 K={}
 for c,n,cat in F:
     tc=('sh' if c[0] in '5' else 'sz')+c
-    d=json.loads(get(f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={tc},day,2023-09-01,2026-12-31,1000,'))['data'][tc]
+    d=json.loads(get(f'https://ifzq.gtimg.cn/appstock/app/fqkline/get?param={tc},day,2023-09-01,2026-12-31,1000,'))['data'][tc]
     K[c]=d.get('day') or d.get('qfqday')
 json.dump(K,open('kline.json','w'))
 dates=sorted({r[0] for v in K.values() for r in v})
@@ -30,7 +30,7 @@ for c,n,cat in F:
             if p>=d['metadata']['pagecount']: break
             p+=1
     SZ[c]=rows; print(c,len(rows),flush=True)
-json.dump(SZ,open('szse.json','w'))
+if any(len(v)>100 for v in SZ.values()): json.dump(SZ,open('szse.json','w'))  # 不用空结果覆盖
 shc={c for c,_,_ in F if c[0]=='5'}
 def sse(dt):
     fn=f'sse/{dt}.json'
