@@ -11,9 +11,11 @@ def get(url,ref=None):
     raise err
 os.makedirs('k',exist_ok=True); os.makedirs('sse',exist_ok=True)
 K={}
+OLD=json.load(open('kline.json'))
 for c,n,cat in F:
     tc=('sh' if c[0] in '5' else 'sz')+c
-    d=json.loads(get(f'https://ifzq.gtimg.cn/appstock/app/fqkline/get?param={tc},day,2023-09-01,2026-12-31,1000,'))['data'][tc]
+    try: d=json.loads(get(f'https://ifzq.gtimg.cn/appstock/app/fqkline/get?param={tc},day,2023-09-01,2026-12-31,1000,'))['data'][tc]
+    except Exception: d={'day':OLD[c]}
     K[c]=d.get('day') or d.get('qfqday')
 json.dump(K,open('kline.json','w'))
 dates=sorted({r[0] for v in K.values() for r in v})
@@ -25,7 +27,8 @@ for c,n,cat in F:
     for (s,e) in [('2023-09-01','2024-06-30'),('2024-07-01','2025-03-31'),('2025-04-01','2025-12-31'),('2026-01-01','2026-12-31')]:
         p=1
         while True:
-            d=json.loads(get(f'https://fund.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=fund_jjgm&TABKEY=tab1&txtDm={c}&txtStart={s}&txtEnd={e}&PAGENO={p}'))[0]
+            try: d=json.loads(get(f'https://fund.szse.cn/api/report/ShowReport/data?SHOWTYPE=JSON&CATALOGID=fund_jjgm&TABKEY=tab1&txtDm={c}&txtStart={s}&txtEnd={e}&PAGENO={p}'))[0]
+            except Exception as ex: print('SZ fail',c); break
             for r in d['data']: rows[r['size_date']]=float(r['current_size'].replace(',',''))
             if p>=d['metadata']['pagecount']: break
             p+=1
